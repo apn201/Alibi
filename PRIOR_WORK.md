@@ -19,8 +19,15 @@ Alibi enters the Copernicus Marine Service Hackathon 2026 with the pieces below,
 
 ## Built during the hackathon
 
-Copernicus Marine connection (wind, waves, currents), the "does the sea explain it" score,
+Copernicus Marine connection (wind, waves, currents, ice), the "does the sea explain it" score,
 everything user-facing. Nothing Copernicus-related was fetched or coded before the event.
+In the repo from 2026-10-29 on: the ALIBI service and API (`alibi/`), the explainers, the
+Copernicus cache and the sea-effect model (`alibi/env/`), the detector rules (`rules/`), the
+demo detector, replay cases and live mode (`detector/`), the GUI (`detector/web/`), stop areas
+learnt from AIS (`tools/stop_areas.py`), the nightly job and snapshot (`tools/nightly.py`,
+`snapshot/`), the evaluation (`eval/`) and the deployment kit (`deploy/`). During the event the
+Danish archive was extended from 2026-10-17 to 2026-10-28 and our recording up to the cut-off
+2026-10-28 was added to the profiles.
 
 ## Data - never committed
 

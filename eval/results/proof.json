@@ -1,0 +1,1019 @@
+{
+ "sensitivity": 0.5,
+ "cases": {
+  "eagle_s_2024": {
+   "title": "Eagle S, 25 Dec 2024: speed drop towards Estlink 2",
+   "kind": "known_case",
+   "third_party": true,
+   "detector_alone": {
+    "candidates": 2
+   },
+   "ais_only": {
+    "candidates": 2,
+    "scored": 2,
+    "top_band": 1,
+    "mean_unusual": 0.655,
+    "mean_unexplained": 0.568
+   },
+   "copernicus": {
+    "candidates": 2,
+    "scored": 2,
+    "top_band": 1,
+    "mean_unusual": 0.655,
+    "mean_unexplained": 0.553
+   },
+   "all": {
+    "candidates": 2,
+    "scored": 2,
+    "top_band": 1,
+    "mean_unusual": 0.655,
+    "mean_unexplained": 0.553
+   },
+   "moved_by_copernicus": [],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 0,
+     "mean_unusual": 0.726,
+     "mean_unexplained": 0.697
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.726,
+     "mean_unexplained": 0.697
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 2,
+     "candidates": 2,
+     "scored": 2,
+     "top_band": 1,
+     "mean_unusual": 0.655,
+     "mean_unexplained": 0.553
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 2,
+     "candidates": 2,
+     "scored": 2,
+     "top_band": 2,
+     "mean_unusual": 0.655,
+     "mean_unexplained": 0.553
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 2,
+     "candidates": 2,
+     "scored": 2,
+     "top_band": 2,
+     "mean_unusual": 0.655,
+     "mean_unexplained": 0.553
+    }
+   ]
+  },
+  "terry_2012": {
+   "title": "TERRY, Oresund, 22 Mar 2012: grounding pattern",
+   "kind": "known_case",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 1
+   },
+   "ais_only": {
+    "candidates": 1,
+    "scored": 1,
+    "top_band": 1,
+    "mean_unusual": 0.995,
+    "mean_unexplained": 0.995
+   },
+   "copernicus": {
+    "candidates": 1,
+    "scored": 1,
+    "top_band": 1,
+    "mean_unusual": 0.995,
+    "mean_unexplained": 0.995
+   },
+   "all": {
+    "candidates": 1,
+    "scored": 1,
+    "top_band": 1,
+    "mean_unusual": 0.995,
+    "mean_unexplained": 0.995
+   },
+   "moved_by_copernicus": [],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.995,
+     "mean_unexplained": 0.995
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.995,
+     "mean_unexplained": 0.995
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.995,
+     "mean_unexplained": 0.995
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.995,
+     "mean_unexplained": 0.995
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 1,
+     "candidates": 1,
+     "scored": 1,
+     "top_band": 1,
+     "mean_unusual": 0.995,
+     "mean_unexplained": 0.995
+    }
+   ]
+  },
+  "fi_fleet_2026_10_05": {
+   "title": "Gulf of Finland fleet slowdown, 5-6 Oct 2026",
+   "kind": "fleet_slowdown",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 211
+   },
+   "ais_only": {
+    "candidates": 211,
+    "scored": 211,
+    "top_band": 53,
+    "mean_unusual": 0.773,
+    "mean_unexplained": 0.269
+   },
+   "copernicus": {
+    "candidates": 211,
+    "scored": 211,
+    "top_band": 49,
+    "mean_unusual": 0.773,
+    "mean_unexplained": 0.257
+   },
+   "all": {
+    "candidates": 211,
+    "scored": 211,
+    "top_band": 49,
+    "mean_unusual": 0.773,
+    "mean_unexplained": 0.257
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "AURELIE",
+     "event": "slowdown",
+     "start": "2026-10-05T18:06:00Z",
+     "unexplained": [
+      0.5097,
+      0.0267
+     ],
+     "why": [
+      "The sea can account for about 95 % of the slowdown: wind 12.5 m/s from the south-west, waves 2.5 m, current -0.1 kn along the course."
+     ]
+    },
+    {
+     "vessel": "DSM FERRO",
+     "event": "slowdown",
+     "start": "2026-10-05T20:31:00Z",
+     "unexplained": [
+      0.5087,
+      0.4758
+     ],
+     "why": []
+    },
+    {
+     "vessel": "THEIA",
+     "event": "slowdown",
+     "start": "2026-10-06T00:27:00Z",
+     "unexplained": [
+      0.8671,
+      0.197
+     ],
+     "why": [
+      "The sea can account for about 77 % of the slowdown: wind 14.5 m/s from the south-west, waves 3.4 m, current -0.4 kn along the course."
+     ]
+    },
+    {
+     "vessel": "KERTU",
+     "event": "slowdown",
+     "start": "2026-10-06T11:21:00Z",
+     "unexplained": [
+      0.5629,
+      0.4606
+     ],
+     "why": []
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 98,
+     "candidates": 98,
+     "scored": 98,
+     "top_band": 25,
+     "mean_unusual": 0.862,
+     "mean_unexplained": 0.325
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 98,
+     "candidates": 98,
+     "scored": 98,
+     "top_band": 29,
+     "mean_unusual": 0.862,
+     "mean_unexplained": 0.325
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 211,
+     "candidates": 211,
+     "scored": 211,
+     "top_band": 49,
+     "mean_unusual": 0.773,
+     "mean_unexplained": 0.257
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 211,
+     "candidates": 211,
+     "scored": 211,
+     "top_band": 52,
+     "mean_unusual": 0.773,
+     "mean_unexplained": 0.257
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 344,
+     "candidates": 344,
+     "scored": 344,
+     "top_band": 72,
+     "mean_unusual": 0.8,
+     "mean_unexplained": 0.221
+    }
+   ]
+  },
+  "dk_oct2025": {
+   "title": "Danish waters fleet slowdown, 3-6 Oct 2025 (widest)",
+   "kind": "fleet_slowdown",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 60
+   },
+   "ais_only": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 16,
+    "mean_unusual": 0.959,
+    "mean_unexplained": 0.276
+   },
+   "copernicus": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 14,
+    "mean_unusual": 0.959,
+    "mean_unexplained": 0.246
+   },
+   "all": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 14,
+    "mean_unusual": 0.959,
+    "mean_unexplained": 0.246
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "SKORPION",
+     "event": "slowdown",
+     "start": "2025-10-04T00:00:00Z",
+     "unexplained": [
+      0.5105,
+      0.2718
+     ],
+     "why": [
+      "The sea can account for about 47 % of the slowdown: wind 14.1 m/s from the south, waves 2.3 m, current -0.1 kn along the course.",
+      "Ships of this kind usually run at 8.9 kn in this area, below their class's typical 10.7 kn (49 passages).",
+      "The 10 other ships within 25 km were also running 20 % below their usual speed at the time."
+     ]
+    },
+    {
+     "vessel": "BERNHARD",
+     "event": "slowdown",
+     "start": "2025-10-04T06:53:00Z",
+     "unexplained": [
+      0.7268,
+      0.3153
+     ],
+     "why": [
+      "The sea can account for about 57 % of the slowdown: wind 18.6 m/s from the south, waves 3.3 m, current -0.2 kn along the course.",
+      "Ships of this kind usually run at 9.8 kn in this area, below their class's typical 11.8 kn (31 passages)."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 6,
+     "mean_unusual": 0.959,
+     "mean_unexplained": 0.246
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 14,
+     "mean_unusual": 0.959,
+     "mean_unexplained": 0.246
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 14,
+     "mean_unusual": 0.959,
+     "mean_unexplained": 0.246
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 14,
+     "mean_unusual": 0.959,
+     "mean_unexplained": 0.246
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 16,
+     "mean_unusual": 0.959,
+     "mean_unexplained": 0.246
+    }
+   ]
+  },
+  "dk_feb2026": {
+   "title": "Danish waters fleet slowdown, 1-7 Feb 2026",
+   "kind": "fleet_slowdown",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 60
+   },
+   "ais_only": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 13,
+    "mean_unusual": 0.975,
+    "mean_unexplained": 0.262
+   },
+   "copernicus": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 9,
+    "mean_unusual": 0.975,
+    "mean_unexplained": 0.209
+   },
+   "all": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 9,
+    "mean_unusual": 0.975,
+    "mean_unexplained": 0.209
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "KARIN LEHMANN",
+     "event": "slowdown",
+     "start": "2026-02-02T01:59:00Z",
+     "unexplained": [
+      0.9989,
+      0.3373
+     ],
+     "why": [
+      "The sea can account for about 66 % of the slowdown: wind 14.0 m/s from the east, waves 2.3 m, current -0.3 kn along the course."
+     ]
+    },
+    {
+     "vessel": "CGAS MAUD",
+     "event": "slowdown",
+     "start": "2026-02-03T02:53:00Z",
+     "unexplained": [
+      0.7702,
+      0.2962
+     ],
+     "why": [
+      "The sea can account for about 62 % of the slowdown: wind 14.9 m/s from the east, waves 2.8 m, current -0.3 kn along the course."
+     ]
+    },
+    {
+     "vessel": "KOBE PIONIER",
+     "event": "slowdown",
+     "start": "2026-02-04T04:50:00Z",
+     "unexplained": [
+      0.9594,
+      0.123
+     ],
+     "why": [
+      "The sea can account for about 87 % of the slowdown: wind 15.4 m/s from the east, waves 2.7 m, current -0.5 kn along the course."
+     ]
+    },
+    {
+     "vessel": "GRIFTBOR",
+     "event": "slowdown",
+     "start": "2026-02-04T12:24:00Z",
+     "unexplained": [
+      0.9855,
+      0.178
+     ],
+     "why": [
+      "The sea can account for about 82 % of the slowdown: wind 15.5 m/s from the east, waves 2.8 m, current -0.4 kn along the course."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 7,
+     "mean_unusual": 0.975,
+     "mean_unexplained": 0.209
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 9,
+     "mean_unusual": 0.975,
+     "mean_unexplained": 0.209
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 9,
+     "mean_unusual": 0.975,
+     "mean_unexplained": 0.209
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 10,
+     "mean_unusual": 0.975,
+     "mean_unexplained": 0.209
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 12,
+     "mean_unusual": 0.975,
+     "mean_unexplained": 0.209
+    }
+   ]
+  },
+  "dk_jul2026": {
+   "title": "Danish waters fleet slowdown, 2-4 Jul 2026 (counter-example)",
+   "kind": "counter_example",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 60
+   },
+   "ais_only": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 13,
+    "mean_unusual": 0.845,
+    "mean_unexplained": 0.268
+   },
+   "copernicus": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 11,
+    "mean_unusual": 0.845,
+    "mean_unexplained": 0.229
+   },
+   "all": {
+    "candidates": 60,
+    "scored": 60,
+    "top_band": 11,
+    "mean_unusual": 0.845,
+    "mean_unexplained": 0.229
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "RIX GULF",
+     "event": "slowdown",
+     "start": "2026-07-02T19:17:00Z",
+     "unexplained": [
+      0.6605,
+      0.0
+     ],
+     "why": [
+      "The sea can account for about 100 % of the slowdown: wind 14.7 m/s from the west, waves 2.2 m, current -0.1 kn along the course."
+     ]
+    },
+    {
+     "vessel": "HAAFJELL",
+     "event": "slowdown",
+     "start": "2026-07-03T01:45:00Z",
+     "unexplained": [
+      0.5733,
+      0.0
+     ],
+     "why": [
+      "The sea can account for about 100 % of the slowdown: wind 13.9 m/s from the west, waves 2.0 m, current -0.8 kn along the course.",
+      "The 10 other ships within 25 km were also running 11 % below their usual speed at the time."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 8,
+     "mean_unusual": 0.845,
+     "mean_unexplained": 0.229
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 10,
+     "mean_unusual": 0.845,
+     "mean_unexplained": 0.229
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 11,
+     "mean_unusual": 0.845,
+     "mean_unexplained": 0.229
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 12,
+     "mean_unusual": 0.845,
+     "mean_unexplained": 0.229
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 60,
+     "candidates": 60,
+     "scored": 60,
+     "top_band": 13,
+     "mean_unusual": 0.845,
+     "mean_unexplained": 0.229
+    }
+   ]
+  },
+  "fi_replay_2026-10-25": {
+   "title": "Recorded day 2026-10-25: every candidate",
+   "kind": "replay_day",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 126
+   },
+   "ais_only": {
+    "candidates": 126,
+    "scored": 126,
+    "top_band": 25,
+    "mean_unusual": 0.838,
+    "mean_unexplained": 0.23
+   },
+   "copernicus": {
+    "candidates": 126,
+    "scored": 126,
+    "top_band": 21,
+    "mean_unusual": 0.838,
+    "mean_unexplained": 0.218
+   },
+   "all": {
+    "candidates": 126,
+    "scored": 126,
+    "top_band": 21,
+    "mean_unusual": 0.838,
+    "mean_unexplained": 0.216
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "STAV VIKING",
+     "event": "slowdown",
+     "start": "2026-10-25T01:50:00Z",
+     "unexplained": [
+      0.5956,
+      0.4929
+     ],
+     "why": []
+    },
+    {
+     "vessel": "AMALIE ESSBERGER",
+     "event": "slowdown",
+     "start": "2026-10-25T07:20:00Z",
+     "unexplained": [
+      0.6742,
+      0.4757
+     ],
+     "why": [
+      "The sea can account for about 29 % of the slowdown: wind 10.0 m/s from the south, waves 1.1 m, current -0.2 kn along the course."
+     ]
+    },
+    {
+     "vessel": "SILJA SYMPHONY",
+     "event": "slowdown",
+     "start": "2026-10-25T19:42:00Z",
+     "unexplained": [
+      0.5195,
+      0.4417
+     ],
+     "why": []
+    },
+    {
+     "vessel": "DRINA S",
+     "event": "slowdown",
+     "start": "2026-10-25T22:41:00Z",
+     "unexplained": [
+      0.5756,
+      0.4184
+     ],
+     "why": [
+      "The sea can account for about 27 % of the slowdown: wind 14.3 m/s from the south, waves 3.3 m, current -0.2 kn along the course.",
+      "The 7 other ships within 25 km were also running 7 % below their usual speed at the time."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 55,
+     "candidates": 55,
+     "scored": 55,
+     "top_band": 3,
+     "mean_unusual": 0.835,
+     "mean_unexplained": 0.242
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 55,
+     "candidates": 55,
+     "scored": 55,
+     "top_band": 5,
+     "mean_unusual": 0.835,
+     "mean_unexplained": 0.242
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 126,
+     "candidates": 126,
+     "scored": 126,
+     "top_band": 21,
+     "mean_unusual": 0.838,
+     "mean_unexplained": 0.216
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 126,
+     "candidates": 126,
+     "scored": 126,
+     "top_band": 26,
+     "mean_unusual": 0.838,
+     "mean_unexplained": 0.216
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 200,
+     "candidates": 200,
+     "scored": 200,
+     "top_band": 27,
+     "mean_unusual": 0.867,
+     "mean_unexplained": 0.181
+    }
+   ]
+  },
+  "fi_replay_2026-10-26": {
+   "title": "Recorded day 2026-10-26: every candidate",
+   "kind": "replay_day",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 138
+   },
+   "ais_only": {
+    "candidates": 138,
+    "scored": 138,
+    "top_band": 23,
+    "mean_unusual": 0.846,
+    "mean_unexplained": 0.222
+   },
+   "copernicus": {
+    "candidates": 138,
+    "scored": 138,
+    "top_band": 20,
+    "mean_unusual": 0.846,
+    "mean_unexplained": 0.209
+   },
+   "all": {
+    "candidates": 138,
+    "scored": 138,
+    "top_band": 20,
+    "mean_unusual": 0.846,
+    "mean_unexplained": 0.208
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "ECO MISTRAL",
+     "event": "slowdown",
+     "start": "2026-10-26T01:17:00Z",
+     "unexplained": [
+      0.5132,
+      0.4577
+     ],
+     "why": [
+      "The 9 other ships within 25 km were also running 6 % below their usual speed at the time."
+     ]
+    },
+    {
+     "vessel": "ALMA",
+     "event": "slowdown",
+     "start": "2026-10-26T13:35:00Z",
+     "unexplained": [
+      0.6414,
+      0.2509
+     ],
+     "why": [
+      "The sea can account for about 61 % of the slowdown: wind 12.5 m/s from the south, waves 2.7 m, current -0.3 kn along the course."
+     ]
+    },
+    {
+     "vessel": "KARIN LEHMANN",
+     "event": "slowdown",
+     "start": "2026-10-26T23:52:00Z",
+     "unexplained": [
+      0.7011,
+      0.2712
+     ],
+     "why": [
+      "The sea can account for about 61 % of the slowdown: wind 11.7 m/s from the south-west, waves 2.4 m, current -0.2 kn along the course."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 67,
+     "candidates": 67,
+     "scored": 67,
+     "top_band": 11,
+     "mean_unusual": 0.835,
+     "mean_unexplained": 0.243
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 67,
+     "candidates": 67,
+     "scored": 67,
+     "top_band": 12,
+     "mean_unusual": 0.835,
+     "mean_unexplained": 0.243
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 138,
+     "candidates": 138,
+     "scored": 138,
+     "top_band": 20,
+     "mean_unusual": 0.846,
+     "mean_unexplained": 0.208
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 138,
+     "candidates": 138,
+     "scored": 138,
+     "top_band": 22,
+     "mean_unusual": 0.846,
+     "mean_unexplained": 0.208
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 200,
+     "candidates": 200,
+     "scored": 200,
+     "top_band": 25,
+     "mean_unusual": 0.865,
+     "mean_unexplained": 0.179
+    }
+   ]
+  },
+  "fi_replay_2026-10-27": {
+   "title": "Recorded day 2026-10-27: every candidate",
+   "kind": "replay_day",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 124
+   },
+   "ais_only": {
+    "candidates": 124,
+    "scored": 124,
+    "top_band": 25,
+    "mean_unusual": 0.834,
+    "mean_unexplained": 0.26
+   },
+   "copernicus": {
+    "candidates": 124,
+    "scored": 124,
+    "top_band": 25,
+    "mean_unusual": 0.834,
+    "mean_unexplained": 0.251
+   },
+   "all": {
+    "candidates": 124,
+    "scored": 124,
+    "top_band": 25,
+    "mean_unusual": 0.834,
+    "mean_unexplained": 0.249
+   },
+   "moved_by_copernicus": [],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 56,
+     "candidates": 56,
+     "scored": 56,
+     "top_band": 12,
+     "mean_unusual": 0.808,
+     "mean_unexplained": 0.344
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 56,
+     "candidates": 56,
+     "scored": 56,
+     "top_band": 15,
+     "mean_unusual": 0.808,
+     "mean_unexplained": 0.344
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 124,
+     "candidates": 124,
+     "scored": 124,
+     "top_band": 25,
+     "mean_unusual": 0.834,
+     "mean_unexplained": 0.249
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 124,
+     "candidates": 124,
+     "scored": 124,
+     "top_band": 27,
+     "mean_unusual": 0.834,
+     "mean_unexplained": 0.249
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 200,
+     "candidates": 200,
+     "scored": 200,
+     "top_band": 31,
+     "mean_unusual": 0.863,
+     "mean_unexplained": 0.201
+    }
+   ]
+  },
+  "fi_replay_2026-10-28": {
+   "title": "Recorded day 2026-10-28: every candidate",
+   "kind": "replay_day",
+   "third_party": false,
+   "detector_alone": {
+    "candidates": 115
+   },
+   "ais_only": {
+    "candidates": 115,
+    "scored": 115,
+    "top_band": 21,
+    "mean_unusual": 0.855,
+    "mean_unexplained": 0.239
+   },
+   "copernicus": {
+    "candidates": 115,
+    "scored": 115,
+    "top_band": 20,
+    "mean_unusual": 0.855,
+    "mean_unexplained": 0.234
+   },
+   "all": {
+    "candidates": 115,
+    "scored": 115,
+    "top_band": 20,
+    "mean_unusual": 0.855,
+    "mean_unexplained": 0.232
+   },
+   "moved_by_copernicus": [
+    {
+     "vessel": "ICELAND",
+     "event": "slowdown",
+     "start": "2026-10-28T15:05:00Z",
+     "unexplained": [
+      0.5303,
+      0.3417
+     ],
+     "why": [
+      "The sea can account for about 36 % of the slowdown: wind 10.2 m/s from the south, waves 1.3 m, current -0.0 kn along the course."
+     ]
+    }
+   ],
+   "sweep": [
+    {
+     "sensitivity": 0.0,
+     "detector": 54,
+     "candidates": 54,
+     "scored": 54,
+     "top_band": 7,
+     "mean_unusual": 0.795,
+     "mean_unexplained": 0.31
+    },
+    {
+     "sensitivity": 0.25,
+     "detector": 54,
+     "candidates": 54,
+     "scored": 54,
+     "top_band": 14,
+     "mean_unusual": 0.795,
+     "mean_unexplained": 0.31
+    },
+    {
+     "sensitivity": 0.5,
+     "detector": 115,
+     "candidates": 115,
+     "scored": 115,
+     "top_band": 20,
+     "mean_unusual": 0.855,
+     "mean_unexplained": 0.232
+    },
+    {
+     "sensitivity": 0.75,
+     "detector": 115,
+     "candidates": 115,
+     "scored": 115,
+     "top_band": 23,
+     "mean_unusual": 0.855,
+     "mean_unexplained": 0.232
+    },
+    {
+     "sensitivity": 1.0,
+     "detector": 200,
+     "candidates": 200,
+     "scored": 200,
+     "top_band": 27,
+     "mean_unusual": 0.885,
+     "mean_unexplained": 0.186
+    }
+   ]
+  }
+ }
+}

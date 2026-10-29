@@ -64,15 +64,19 @@ def main() -> int:
         with open(gur, encoding="utf-8") as src, open(sanc / gur.name, "w", encoding="utf-8", newline="\n") as dst:
             dst.writelines(line for line in src if '"schema":"Vessel"' in line)
 
+    # Files are replaced and removed one by one, never the folder: Dropbox briefly locks folders it syncs.
     ctx = SNAP / "context"
-    if ctx.exists():
-        shutil.rmtree(ctx)
+    wanted = set()
     for layer in LATEST_ONLY + ALL_OF:
         files = sorted(glob.glob(str(DATA / "context" / layer / "*" / "*" / "*" / "*.json.gz")))
         for f in files[-1:] if layer in LATEST_ONLY else files:
             out = ctx / Path(f).relative_to(DATA / "context")
-            out.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(f, out)
+            wanted.add(out)
+            if not out.exists() or out.stat().st_size != Path(f).stat().st_size:
+                out.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, out)
+    for f in [p for p in ctx.rglob("*") if p.is_file() and p not in wanted]:
+        f.unlink()
 
     # Replay cases from open data only (Eagle S is third-party: results, not data). The live case is made on the server.
     cases = SNAP / "cases"
