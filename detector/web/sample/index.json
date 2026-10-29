@@ -1,0 +1,10 @@
+[
+ {
+  "case_id": "sample_gof",
+  "title": "Gulf of Finland, one evening (synthetic sample)",
+  "kind": "replay_day",
+  "region": "gof",
+  "start": "2026-10-12T16:01:00Z",
+  "end": "2026-10-12T22:00:00Z"
+ }
+]

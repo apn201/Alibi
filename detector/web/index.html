@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ALIBI Console</title>
+<meta name="description" content="ALIBI: Automatic Lookout for Irregular Baltic Itineraries. Ranks unusual vessel behaviour by how much the available evidence leaves unexplained.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">ALIBI<small>AUTOMATIC LOOKOUT FOR IRREGULAR BALTIC ITINERARIES</small></div>
+  <span class="lamp off" id="lamp-api" title="ALIBI API"><i></i>API</span>
+  <span class="lamp off" id="lamp-prof" title="Profile database"><i></i>PROFILES</span>
+  <span class="lamp off" id="lamp-cop" title="Copernicus Marine environmental cache"><i></i>COPERNICUS</span>
+  <span class="sample" id="sample-badge" hidden title="The ALIBI API is not reachable. The console shows a synthetic sample case and scores it in the browser.">SAMPLE DATA · API OFFLINE</span>
+  <span class="replay" id="replay-stamp" hidden></span>
+  <span class="bar-right">
+    <button class="key" id="about-open" type="button">ABOUT / LIMITS</button>
+    <span class="clock" id="clock">--:--:-- UTC</span>
+  </span>
+</header>
+
+<section class="unit controls" aria-label="Controls">
+  <div class="ctl">
+    <div class="plate">CASE</div>
+    <div class="keys" id="case-keys" role="group" aria-label="Case"><span class="dimtxt">loading…</span></div>
+  </div>
+  <div class="ctl ctl-src">
+    <div class="plate">SOURCES <b>· RE-RUN THE WHOLE CASE</b></div>
+    <div class="keys" id="source-keys" role="group" aria-label="Evidence sources"></div>
+  </div>
+  <div class="ctl ctl-sens">
+    <div class="plate">SENSITIVITY <b id="sens-rec">· RECORDED --</b></div>
+    <div class="sens">
+      <input type="range" id="sens" min="0" max="1" step="0.05" value="0.5" aria-describedby="sens-help">
+      <output id="sens-val" for="sens">0.50</output>
+    </div>
+    <div class="dimtxt" id="sens-help">top band: unexplained ≥ <span id="sens-th">0.50</span></div>
+  </div>
+</section>
+
+<main class="deck">
+  <section class="unit board-unit" aria-label="Signature board">
+    <div class="plate">SIGNATURE BOARD <b id="board-sub">· 6 H BEFORE EACH EVENT · 1-MIN STEPS</b>
+      <span class="keys sortkeys" role="group" aria-label="Sort">
+        <button class="key" type="button" data-sort="unx" aria-pressed="true">SORT Δ UNEXPLAINED</button>
+        <button class="key" type="button" data-sort="unu" aria-pressed="false">Δ UNUSUAL</button>
+        <button class="key" type="button" data-sort="name" aria-pressed="false">NAME</button>
+      </span>
+    </div>
+    <div class="screen">
+      <div class="strip" id="strip" aria-live="polite">
+        <div class="strip-main">
+          <span class="strip-k">TOP BAND</span>
+          <span class="strip-before" id="strip-before" hidden></span>
+          <span class="strip-arrow" id="strip-arrow" hidden>→</span>
+          <span class="strip-now" id="strip-now">--</span>
+          <span class="strip-what" id="strip-what"></span>
+        </div>
+        <div class="strip-sub" id="strip-sub">-- candidates</div>
+      </div>
+      <div class="head"><span>Δ</span><span>VESSEL</span><span>SPEED KN · RECORDED vs EXPECTED</span><span>HEADING °</span><span>FACTORS</span></div>
+      <div id="board" role="listbox" aria-label="Candidates, ranked"></div>
+      <div class="legend">
+        <span class="bandkey">expected band (profile adjusted for place, weather, ice, traffic)</span>
+        <span class="raw">profile alone, where the band was adjusted</span>
+        <span style="--c:var(--trace)">recorded</span>
+        <span style="--c:var(--amber)">unusual, explained</span>
+        <span style="--c:var(--red)">outside the band, unexplained</span>
+        <span class="ghostkey">before the last change</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="unit">
+      <div class="plate">CHART SCOPE <b id="scope-sub">· SCHEMATIC</b></div>
+      <div class="screen"><canvas id="scope" aria-label="Schematic chart of candidate positions" role="img"></canvas></div>
+    </section>
+    <article class="sheet" id="sheet" aria-live="polite"><p class="foot">Select a row to open its recognition sheet.</p></article>
+  </aside>
+</main>
+
+<dialog id="about" aria-labelledby="about-h">
+  <div class="sheet about">
+    <button class="key about-x" type="button" id="about-close" aria-label="Close">CLOSE</button>
+    <div class="cls">ABOUT / LIMITS</div>
+    <h2 id="about-h">ALIBI</h2>
+    <p><b>Automatic Lookout for Irregular Baltic Itineraries.</b> A detector says a ship is behaving unusually. ALIBI checks what the available evidence can explain, and ranks what is left.</p>
+    <h3>Responsible use</h3>
+    <ul>
+      <li>No live alerts. This console replays fixed, recorded cases.</li>
+      <li>Ranked, not alarmed. The top of the list reads: behaving unusually, and the available evidence does not explain it. It is a list to look at first, not a list of culprits.</li>
+      <li>Unexplained is not evidence of intent. A high value says the sea, the place and the traffic we checked do not account for the behaviour. It does not say why.</li>
+      <li>Missing data lowers confidence. It never raises a score.</li>
+      <li>Identity lists never change the score. EU designations and the GUR listing are shown as context, separately. A GUR listing is not a sanctions designation.</li>
+      <li>Sentences are fixed and written by people. No language model is in the decision path.</li>
+    </ul>
+    <h3>Data sources and attribution</h3>
+    <ul>
+      <li>Generated using E.U. Copernicus Marine Service Information (waves, wind, sea ice, currents).</li>
+      <li>AIS: Fintraffic Digitraffic, licensed CC BY 4.0.</li>
+      <li>AIS history: Danish Maritime Authority AIS archive.</li>
+      <li>EU sanctions list (designated vessels, matched by IMO).</li>
+      <li>OpenSanctions, GUR dataset (Ukrainian Defence Intelligence listing).</li>
+    </ul>
+    <h3>Coverage limits</h3>
+    <ul>
+      <li>Receiver coverage is regional: the Gulf of Finland from our own recording (October 2026) and Danish waters from the DMA archive. Not the whole Baltic.</li>
+      <li>Profiles are young: weeks of data, not years. Ships with few journeys fall back to their class prototype, with lower confidence.</li>
+      <li>Context layers (anchorages, restriction areas) cover Finnish waters only.</li>
+      <li>Correlation with sea state is not proof of cause. Scores are not calibrated probabilities.</li>
+      <li>Early prototype built for the Copernicus Marine Service Hackathon, track Maritime Security.</li>
+    </ul>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

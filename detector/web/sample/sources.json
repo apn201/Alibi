@@ -1,0 +1,58 @@
+{
+ "sources": [
+  {
+   "source_id": "profile",
+   "title": "Vessel and class profile",
+   "kind": "behaviour",
+   "attribution": "AIS: Fintraffic Digitraffic (CC BY 4.0), Danish Maritime Authority"
+  },
+  {
+   "source_id": "sea_state",
+   "title": "Sea state (Copernicus Marine)",
+   "kind": "behaviour",
+   "attribution": "Generated using E.U. Copernicus Marine Service Information"
+  },
+  {
+   "source_id": "ice",
+   "title": "Sea ice (Copernicus Marine)",
+   "kind": "behaviour",
+   "attribution": "Generated using E.U. Copernicus Marine Service Information"
+  },
+  {
+   "source_id": "own_habit",
+   "title": "This ship's own habits",
+   "kind": "behaviour",
+   "attribution": "ALIBI profile DB"
+  },
+  {
+   "source_id": "place",
+   "title": "Place: anchorages, approaches",
+   "kind": "behaviour",
+   "attribution": "Fintraffic / Traficom context layers"
+  },
+  {
+   "source_id": "fleet",
+   "title": "Other ships nearby",
+   "kind": "behaviour",
+   "attribution": "AIS"
+  },
+  {
+   "source_id": "notices",
+   "title": "Navigational warnings",
+   "kind": "behaviour",
+   "attribution": "Fintraffic Digitraffic"
+  },
+  {
+   "source_id": "position_quality",
+   "title": "Position quality",
+   "kind": "quality",
+   "attribution": "AIS"
+  },
+  {
+   "source_id": "identity",
+   "title": "Identity lists (EU, GUR)",
+   "kind": "identity",
+   "attribution": "EU sanctions list; OpenSanctions GUR dataset"
+  }
+ ]
+}
