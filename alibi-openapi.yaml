@@ -361,7 +361,10 @@ components:
                 Deviation from the ship's expected speed (blend of own profile,
                 class prototype and this journey); not a threat score. Null for
                 working vessels (tug, pilot, SAR, pleasure, fishing, service),
-                which are not scored.
+                which are not scored. Measured per event type (details.unusual.measure):
+                speed for slowdowns, gap length and displacement for ais_gap,
+                minutes lingering against the place for corridor_loiter, the
+                abrupt-stop fingerprint for grounding_pattern.
             unexplained:
               type: [number, 'null']
               minimum: 0

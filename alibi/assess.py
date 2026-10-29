@@ -53,6 +53,18 @@ LIMITATIONS = [
     "the deviation.",
 ]
 LIMIT_SPEED_ONLY = "Unusual is measured on speed; this event type is assessed by the ship's speed only."
+# Which sources can explain which measure (alibi.unusual.measure_for). Behaviour sources outside the
+# set answer neutral with a fixed sentence; position_quality counts as an explainer for gaps only
+# (patchy reception explains a silence, it never explains a speed change).
+SPEED_SOURCES = {"sea_state", "ice", "own_habit", "place", "fleet", "notices"}
+APPLIES = {"speed": SPEED_SOURCES, "grounding": SPEED_SOURCES,
+           "gap": {"fleet", "position_quality"},
+           "loiter": {"sea_state", "ice", "place", "fleet", "notices"}}
+NOT_APPLICABLE = {
+    "gap": "This source speaks to speed, not to a gap in AIS reports.",
+    "loiter": "This source speaks to passing speed, not to lingering in one place.",
+    "speed": "This source does not bear on this event.", "grounding": "This source does not bear on this event.",
+}
 LIMIT_TRACK_MODE = "The event was found by ALIBI's reference detector over the submitted track, not by the caller."
 LAMP_ORDER = ["explains", "not_explained", "neutral", "unavailable"]
 STATUS_LAMP = {"supports_explanation": "explains", "weakens_explanation": "not_explained", "neutral": "neutral",
@@ -330,7 +342,10 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
     if vessel["mmsi"] is not None:
         event.setdefault("vessel_id", str(vessel["mmsi"]))
         event.setdefault("identifier_type", "MMSI")
+    measure = U.measure_for(event.get("event_type"))
     ev = track[(track["time"] >= start) & (track["time"] <= end)]
+    if measure == "gap":  # a gap has no positions inside; judge speed from the reports either side
+        ev = track[(track["time"] >= start - 300) & (track["time"] <= end + 300)]
     if ev["sog"].notna().sum() < 1:
         raise Unassessable("no_track_in_event", "The track has no positions with speed inside the event window.",
                            {"event_start": iso(start), "event_end": iso(end)})
@@ -345,23 +360,40 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
     observed = float(ev["sog"].median())
     baseline = float(pre["sog"].median()) if pre["sog"].notna().any() else None
     tier = ex["tier"]
+    cov = profiles.coverage(lat, lon, (start + end) // 2)
+    summary = event.get("baseline_summary") or {}
     um = U.unusual(ex["expected_kn"], observed, ex["sigma_kn"]) if tier != "working" else {"unusual": None}
+    if tier == "working":
+        um = {"unusual": None, "measure": measure}
+    elif measure == "gap":
+        um = {**U.gap(track, start, end, summary), "speed": um}
+    elif measure == "loiter":
+        tile = pdata.tile(lat, lon, vessel["group"]) if cov and pdata.segments_ok else None
+        um = {**U.loiter(ev, start, end, tile), "speed": um}
+    elif measure == "grounding":
+        um = {**U.grounding(track, start, summary, um.get("unusual")), "speed": um}
+    else:
+        um = {**um, "measure": "speed"}
     u = um["unusual"]
     cog = ev["cog"].dropna()
-    cov = profiles.coverage(lat, lon, (start + end) // 2)
     ctx = Context(track=track, event_start=start, event_end=end, lat=lat, lon=lon,
                   vessel={**{k: v for k, v in vessel.items() if k != "mmsis"}, "profile_tier": tier},
                   expected_kn=ex["expected_kn"], observed_kn=observed, baseline_kn=baseline,
                   cog_deg=float(np.degrees(np.arctan2(np.sin(np.radians(cog)).mean(), np.cos(np.radians(cog)).mean())) % 360)
                   if len(cog) else None, unusual=u, sensitivity=opts.sensitivity,
                   extra={"profiles": pdata, "coverage": cov, "mmsis": vessel["mmsis"], "own_profile": ex.get("own"),
-                         "class_speed": ex.get("class_speed_kn"), "sigma": ex["sigma_kn"], "metadata": req.metadata or {}})
+                         "class_speed": ex.get("class_speed_kn"), "sigma": ex["sigma_kn"], "metadata": req.metadata or {},
+                         "measure": measure, "event_type": event.get("event_type"), "summary": summary})
 
     findings: list[Finding] = []
     for sid in config.SOURCE_IDS[1:]:
         if sid not in enabled:
             continue
         exp_ = reg[sid]
+        if sid in BEHAVIOUR and sid not in APPLIES[measure]:
+            findings.append(Finding(sid, "neutral", NOT_APPLICABLE[measure], lamp=getattr(exp_, "lamp", None),
+                                    details={"measure": measure, "applies": False}))
+            continue
         try:
             f = exp_.evaluate(ctx)
         except Exception as e:  # noqa: BLE001 - one failing source must not fail the assessment
@@ -372,7 +404,7 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
         kind = getattr(exp_, "kind", "behaviour")
         if kind == "identity":
             f.status, f.explains, f.expected_delta_kn = "identity_context_only", 0.0, None
-        elif kind == "quality":
+        elif kind == "quality" and sid not in APPLIES[measure]:
             f.explains, f.expected_delta_kn = 0.0, None
         f.explains = float(min(1.0, max(0.0, f.explains or 0.0)))
         findings.append(f)
@@ -381,7 +413,7 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
     if u is not None:
         x = u
         for f in findings:
-            if f.source_id in BEHAVIOUR:
+            if f.source_id in APPLIES[measure]:
                 x *= 1 - f.explains
         x = round(min(x, u), 4)
     threshold = round(0.75 - 0.5 * opts.sensitivity, 4)
@@ -394,7 +426,7 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
         headline = HEADLINES["usual"] if u < 0.3 else HEADLINES["most" if x < 0.5 * u else "part"]
     conf = _confidence(findings, disabled, tier, (start - int(track["time"].iloc[0])) / 60)
     limitations = [config.coverage_sentence(), *LIMITATIONS]
-    if event.get("event_type") not in ("slowdown", "grounding_pattern", "track_review"):
+    if measure == "speed" and event.get("event_type") not in ("slowdown", "track_review"):
         limitations.append(LIMIT_SPEED_ONLY)
     if detected_by == "reference_detector":
         limitations.append(LIMIT_TRACK_MODE)

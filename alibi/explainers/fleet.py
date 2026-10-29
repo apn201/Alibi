@@ -6,6 +6,12 @@ whole ran below its usual speed, that shared slowdown explains the same share of
 drop (something slowed everybody; sea_state may say what). A fleet that kept its speed while
 this ship slowed weakens the explanation. Needs MIN_SHIPS other ships, else neutral.
 Segments longer than MAX_SEG_S are skipped: their median says little about one hour.
+
+For an AIS gap the question is different: did the ships around go unheard too? Segments
+break at 15-minute reporting gaps, so a ship whose segment ends shortly before the gap and
+resumes during or after it went quiet as well; one with a segment spanning the whole gap was
+heard throughout. If others went quiet too, the gap points to receiver coverage, and that
+share of ships explains the same share of the gap.
 """
 
 from __future__ import annotations
@@ -35,6 +41,8 @@ class Fleet:
         if not pdata.segments_ok or cov is None:
             return unavailable(self.id, "This place and time are outside the AIS history ALIBI holds, "
                                "so the traffic around the ship is unknown.", self.lamp, coverage=cov)
+        if ctx.extra.get("measure") == "gap":
+            return self.gap(ctx, pdata, cov)
         dev = deviation_kn(ctx)
         if dev is None or dev <= 0:
             return no_slowdown(self.id, self.lamp)
@@ -72,6 +80,36 @@ class Fleet:
                        "slower than usual, which explains little of the drop.", e, 0.0, self.lamp,
                        source_reference=ref, details=det,
                        expected_delta_kn=window_delta(ctx, delta) if delta > 0 else None)
+
+    def gap(self, ctx: Context, pdata, cov) -> Finding:
+        s, a, b = pdata.seg, ctx.event_start, ctx.event_end
+        idx = pdata.segments_window(a - WINDOW_S, b + WINDOW_S)
+        idx = idx[~np.isin(s["mmsi"][idx], ctx.extra.get("mmsis") or [])]
+        idx = idx[km_between(ctx.lat, ctx.lon, s["lat"][idx], s["lon"][idx]) <= RADIUS_KM]
+        t0, t1, mm = s["t0"][idx], s["t1"][idx], s["mmsi"][idx]
+        heard = set(mm[(t0 <= a) & (t1 >= b)].tolist())
+        ended = set(mm[(t1 >= a - 600) & (t1 <= b)].tolist())
+        resumed = set(mm[(t0 >= a) & (t0 <= b + 900)].tolist())
+        quiet = (ended & resumed) - heard
+        n = len(heard) + len(quiet)
+        det = {"radius_km": RADIUS_KM, "ships_heard_throughout": len(heard), "ships_also_quiet": len(quiet),
+               "coverage": cov}
+        ref = f"profile_db segments ({cov}), {n} ships"
+        if n < MIN_SHIPS:
+            return Finding(self.id, "neutral", f"Fewer than {MIN_SHIPS} other ships were within {RADIUS_KM:.0f} km "
+                           "during the gap, too few to judge reception.", lamp=self.lamp, source_reference=ref,
+                           details=det, confidence_penalty=0.05)
+        e = len(quiet) / n
+        det["explains"] = round(e, 3)
+        if e >= SUPPORTS:
+            return Finding(self.id, "supports_explanation", f"{len(quiet)} of {n} other ships within "
+                           f"{RADIUS_KM:.0f} km also went unheard at the time, which points to receiver coverage.",
+                           e, 0.0, self.lamp, source_reference=ref, details=det)
+        if not quiet:
+            return Finding(self.id, "weakens_explanation", f"The {n} other ships within {RADIUS_KM:.0f} km were "
+                           "heard throughout the gap.", 0.0, 0.0, self.lamp, source_reference=ref, details=det)
+        return Finding(self.id, "neutral", f"Few of the {n} other ships within {RADIUS_KM:.0f} km went unheard at "
+                       "the time.", e, 0.0, self.lamp, source_reference=ref, details=det)
 
 
 EXPLAINER = Fleet()

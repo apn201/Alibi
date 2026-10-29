@@ -7,8 +7,11 @@ that is valid but cannot be assessed (too short a track, no positions in the eve
 
 from __future__ import annotations
 
+import json
 import logging
+import threading
 import time
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -27,22 +30,62 @@ log = logging.getLogger("alibi.api")
 BASE = "/api/v1"
 
 
+def warm_up() -> None:
+    """Load everything that loads lazily (context layers, identity lists, the Copernicus reader)
+    with one throw-away assessment over the newest day the env cache holds."""
+    try:
+        from .explainers import identity, notices, place
+        place.restriction_areas(), notices.snapshots(), identity.eu_list(), identity.gur_list()
+        day = None
+        try:
+            from .env.cache import get_cache
+            cov = get_cache().coverage().values()
+            lasts = [regs["gof"]["last"] for regs in cov if "gof" in regs]  # the warm-up track is in the Gulf
+            day = min(lasts) if lasts else None  # a day every dataset has
+        except Exception:  # noqa: BLE001
+            pass
+        t0 = int(datetime.strptime(day, "%Y%m%d").replace(tzinfo=timezone.utc).timestamp()) + 9 * 3600 if day             else int(time.time()) - 86400
+        assess(AssessmentRequest.model_validate({"track": [
+            {"timestamp": t0 + 60 * i, "latitude": 59.7, "longitude": 24.5 + 0.003 * i,
+             "sog_knots": 12.0 if i < 50 else 4.0} for i in range(60)]}))
+    except Exception as e:  # noqa: BLE001
+        log.warning("warm-up: %s", e)
+
+
+def warm_env_days(files: list[Path], limit: int = 12) -> None:
+    """Open the env cache for the event days of these requests or case files (each new day costs
+    the reader a few seconds on first use): the bundled example at startup, the demo cases after."""
+    try:
+        from .env.cache import get_cache
+        cache, seen = get_cache(), set()
+        for f in files:
+            doc = json.loads(f.read_text(encoding="utf-8"))
+            for r in doc.get("requests", [doc]):
+                ev = r.get("event") or {}
+                loc = ev.get("location") or (r.get("track") or [{}])[-1]
+                if not ev.get("end_time") or "latitude" not in loc:
+                    continue
+                t = datetime.fromisoformat(ev["end_time"].replace("Z", "+00:00")).timestamp()
+                if t // 86400 in seen:
+                    continue
+                seen.add(t // 86400)
+                cache.sample(loc["latitude"], loc["longitude"], t)
+                if len(seen) >= limit:
+                    return
+    except Exception as e:  # noqa: BLE001
+        log.warning("env warm-up: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     t = time.time()
     profiles.get()
     registry()
     ledger.init()
-    try:  # warm the lazily loaded context layers so the first request is as fast as the rest
-        from .explainers import identity, notices, place
-        place.restriction_areas(), notices.snapshots(), identity.eu_list(), identity.gur_list()
-        # one throw-away assessment loads whatever the other explainers (e.g. the env cache) load lazily
-        t0 = int(time.time()) - 86400
-        assess(AssessmentRequest.model_validate({"track": [
-            {"timestamp": t0 + 60 * i, "latitude": 59.7, "longitude": 24.5 + 0.003 * i,
-             "sog_knots": 12.0 if i < 50 else 4.0} for i in range(60)]}))
-    except Exception as e:  # noqa: BLE001
-        log.warning("warm-up: %s", e)
+    warm_up()
+    warm_env_days(sorted(config.ROOT.glob("examples/*.json")))
+    threading.Thread(target=warm_env_days, args=(sorted((config.DATA / "cases").glob("*.json")),),
+                     name="alibi-warm-env", daemon=True).start()
     log.info("ALIBI ready in %.1f s", time.time() - t)
     yield
 

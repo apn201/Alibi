@@ -171,3 +171,67 @@ def test_batch(client):
     assert out[0]["audit_reference"] is None
     assert out[1]["index"] == 1 and out[1]["error"] == "track_too_short"
     assert client.get(f"/api/v1/assessments/{out[0]['assessment_id']}").status_code == 404
+
+
+def test_example_identity_is_synthetic(client):
+    body = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    assert body["event"]["vessel_id"] == "999999001" and "imo" not in body["metadata"]
+    a = post(client, body).json()
+    assert a["vessel"]["name"] == "EXAMPLE VESSEL" and a["vessel"]["imo"] is None
+    assert a["vessel"]["cls"] == "cargo/XL"  # prototype from metadata ship_type and length
+    assert a["measures"]["unusual"] > 0.9
+
+
+def gap_request(gap_min=21, moved_km=7.4, lat=45.0):
+    """Steady 8 kn every minute, silent for gap_min, reappears moved_km further on."""
+    t0 = datetime(2026, 10, 26, 0, 0, tzinfo=timezone.utc)
+    deg_per_min = 8 * 1.852 / 60 / (111.32 * 0.707)
+    track, lon = [], -20.0
+    for i in range(240):
+        track.append({"timestamp": (t0 + timedelta(minutes=i)).strftime("%Y-%m-%dT%H:%M:%SZ"), "latitude": lat,
+                      "longitude": round(lon + i * deg_per_min, 5), "sog_knots": 8.0, "cog_degrees": 90.0})
+    last = track[-1]
+    jump = moved_km / (111.32 * 0.707)
+    t1 = t0 + timedelta(minutes=239 + gap_min)
+    for j in range(30):
+        track.append({"timestamp": (t1 + timedelta(minutes=j)).strftime("%Y-%m-%dT%H:%M:%SZ"), "latitude": lat,
+                      "longitude": round(last["longitude"] + jump + j * deg_per_min, 5), "sog_knots": 8.0,
+                      "cog_degrees": 90.0})
+    event = {"event_id": "gap-1", "event_type": "ais_gap", "start_time": last["timestamp"],
+             "end_time": t1.strftime("%Y-%m-%dT%H:%M:%SZ"),
+             "baseline_summary": {"gap_min": gap_min, "reappeared_km": moved_km, "reference_kn": 8.0}}
+    return {"event": event, "track": track, "metadata": {"ship_type": "Tanker", "length_m": 180}}
+
+
+def test_gap_scored_without_speed_drop(client):
+    a = post(client, gap_request()).json()
+    m = a["measures"]
+    assert a["details"]["unusual"]["measure"] == "gap"
+    assert m["unusual"] > 0.5  # 21 min silent for a ship heard every minute, moved further than 8 kn explains
+    assert m["unexplained"] <= m["unusual"]
+    habit = [f for f in a["findings"] if f["source_id"] == "own_habit"][0]
+    assert habit["status"] == "neutral" and habit["details"]["applies"] is False
+    short = post(client, gap_request(gap_min=6, moved_km=1.5)).json()
+    assert short["measures"]["unusual"] < m["unusual"]
+
+
+def test_patchy_reception_explains_gap(client):
+    body = gap_request()
+    for k in range(40, 200, 40):  # four earlier 8-minute silences
+        body["track"] = [p for i, p in enumerate(body["track"]) if not (k <= i < k + 8)]
+    a = post(client, body).json()
+    pq = [f for f in a["findings"] if f["source_id"] == "position_quality"][0]
+    assert pq["status"] == "supports_explanation" and pq["explains"] > 0
+    assert a["measures"]["unexplained"] < a["measures"]["unusual"]
+
+
+def test_grounding_and_loiter_measures(client):
+    g = synthetic(fast=11.0, slow=0.3)
+    g["event"]["event_type"] = "grounding_pattern"
+    a = post(client, g).json()
+    assert a["details"]["unusual"]["measure"] == "grounding" and a["measures"]["unusual"] >= 0.6
+    lo = synthetic(fast=10.0, slow=1.0)
+    lo["event"]["event_type"] = "corridor_loiter"
+    b = post(client, lo).json()
+    assert b["details"]["unusual"]["measure"] == "loiter" and 0 < b["measures"]["unusual"] <= 1
+    assert b["measures"]["unexplained"] <= b["measures"]["unusual"]

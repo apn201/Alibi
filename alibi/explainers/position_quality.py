@@ -6,6 +6,10 @@ Two checks over the submitted track:
 The accuracy and RAIM flags are reported in `details` only: most AIS transponders report
 "low accuracy" (> 10 m), which says nothing about a speed change.
 Poor quality lowers confidence; it never makes a ship look more suspicious.
+
+For an AIS gap (and only then) this source also explains: a track that already drops out
+elsewhere (other silences over OTHER_GAP_S outside the event) is patchily received, and each
+such silence explains GAP_SHARE of the gap, up to 0.8.
 """
 
 from __future__ import annotations
@@ -17,6 +21,8 @@ from .base import Context, Finding
 JUMP_KN = 50.0
 SPARSE_S = 180
 GAP_S = 900
+OTHER_GAP_S = 300
+GAP_SHARE = 0.3
 
 
 class PositionQuality:
@@ -51,9 +57,22 @@ class PositionQuality:
         if jumps:
             issues.append(f"{jumps} position jump(s) implying more than {JUMP_KN:.0f} kn")
             penalty += 0.3
-        if median_dt > SPARSE_S or gap_ev > GAP_S:
+        if median_dt > SPARSE_S or (gap_ev > GAP_S and ctx.extra.get("measure") != "gap"):
             issues.append("sparse reporting")
             penalty += 0.2
+        if ctx.extra.get("measure") == "gap":
+            outside = ((t[1:] <= ctx.event_start) | (t[:-1] >= ctx.event_end)) & (dt > OTHER_GAP_S)
+            other = int(outside.sum())
+            e = min(0.8, GAP_SHARE * other)
+            det.update(other_gaps_over_5min=other, explains=round(e, 3))
+            if other:
+                return Finding(self.id, "supports_explanation" if e >= 0.2 else "neutral",
+                               f"The track has {other} other silence(s) over {OTHER_GAP_S // 60} minutes, so reception "
+                               "of this ship is patchy.", e, min(penalty, 0.5), self.lamp,
+                               source_reference="submitted track", details={**det, "issues": issues})
+            return Finding(self.id, "weakens_explanation", "Apart from this gap the ship was heard regularly.",
+                           0.0, min(penalty, 0.5), self.lamp, source_reference="submitted track",
+                           details={**det, "issues": issues})
         if not issues:
             return Finding(self.id, "neutral", "The track reports regularly and shows no position jumps.",
                            lamp=self.lamp, source_reference="submitted track", details=det)

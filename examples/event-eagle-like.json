@@ -1,6 +1,6 @@
 {
- "event": {"event_id": "example-gof-2026-10-26", "event_type": "slowdown", "vessel_id": "538005453", "identifier_type": "MMSI", "start_time": "2026-10-26T09:21:00Z", "end_time": "2026-10-26T10:21:00Z"},
- "metadata": {"case_id": "example-gof-2026-10-26", "ship_type": "cargo", "length_m": 230.0, "source": "Fintraffic Digitraffic AIS, recorded by ALIBI (1-minute medians)"},
+ "event": {"event_id": "example-gof-2026-10-26", "event_type": "slowdown", "vessel_id": "999999001", "identifier_type": "MMSI", "start_time": "2026-10-26T09:21:00Z", "end_time": "2026-10-26T10:21:00Z"},
+ "metadata": {"case_id": "example-gof-2026-10-26", "vessel_name": "EXAMPLE VESSEL", "ship_type": "cargo", "length_m": 230.0, "source": "Fintraffic Digitraffic AIS, recorded by ALIBI (1-minute medians); identity removed"},
  "options": {"sensitivity": 0.5},
  "track": [
   {"timestamp":"2026-10-26T04:21:00Z","latitude":59.41164,"longitude":22.66679,"sog_knots":11.0,"cog_degrees":71.7,"heading_degrees":73.0,"pos_acc":false,"raim":false},

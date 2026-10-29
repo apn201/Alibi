@@ -8,6 +8,10 @@ Three pieces of evidence, the strongest counts:
                     anchorages, pilot boarding) explains part of the drop by that share.
     restrictions    Traficom restriction areas (Finnish waters): a speed limit explains the drop
                     down to the limit; a wake ban part of it. An anchoring ban is shown, not counted.
+
+For lingering in one place (corridor_loiter) only the stopping habit of the tile counts: where
+LOITER_FULL of this kind of ship's segments run under 5 kn (an anchorage, a waiting area),
+lingering is fully explained; less, proportionally. An anchoring ban there weakens it.
 """
 
 from __future__ import annotations
@@ -26,6 +30,7 @@ from .base import Context, Finding
 MIN_TILE_SEGMENTS = 5
 SLOW_SHARE = 0.4      # a tile where this share of segments run under 5 kn is a port approach or anchorage
 WAKE_BAN_SHARE = 0.3  # a wake ban explains this share of a drop (starting guess)
+LOITER_FULL = 0.6
 
 
 @lru_cache(maxsize=1)
@@ -81,6 +86,8 @@ class Place:
         if (cov is None or not pdata.segments_ok) and not finnish:
             return unavailable(self.id, "This place is outside the AIS history and restriction data ALIBI holds.",
                                self.lamp)
+        if ctx.extra.get("measure") == "loiter":
+            return self.loiter(ctx, pdata, cov, finnish)
         dev = deviation_kn(ctx)
         if dev is None or dev <= 0:
             return no_slowdown(self.id, self.lamp)
@@ -131,6 +138,28 @@ class Place:
         return Finding(self.id, "neutral", "The place explains little of the drop.", e, 0.0, self.lamp,
                        source_reference=ref, details=det,
                        expected_delta_kn=window_delta(ctx, delta) if delta > 0 else None)
+
+    def loiter(self, ctx: Context, pdata, cov, finnish: bool) -> Finding:
+        group = ctx.vessel.get("group") or "unknown"
+        tile = pdata.tile(ctx.lat, ctx.lon, group) if cov and pdata.segments_ok else None
+        areas = areas_at(ctx.lat, ctx.lon) if finnish else []
+        det = {"group": group, "coverage": cov, "tile": tile, "restriction_areas": areas}
+        ref = f"profile_db tiles ({cov})" if cov else restriction_areas()[1]
+        if any("06" in a["codes"] for a in areas):
+            return Finding(self.id, "weakens_explanation", "Anchoring is prohibited in this area, so lingering here "
+                           "is not explained by the place.", 0.0, 0.0, self.lamp, source_reference=ref, details=det)
+        if not tile or tile["segments"] < MIN_TILE_SEGMENTS:
+            return Finding(self.id, "neutral", "There is too little traffic of this kind here to say whether ships "
+                           "usually linger.", lamp=self.lamp, source_reference=ref, details=det)
+        e = min(1.0, tile["slow_share"] / LOITER_FULL)
+        det["explains"] = round(e, 3)
+        pct = tile["slow_share"] * 100
+        if e >= SUPPORTS:
+            return Finding(self.id, "supports_explanation", f"{pct:.0f} % of passages of this kind of ship in this "
+                           "area are under 5 kn, as at an anchorage or waiting area.", e, 0.0, self.lamp,
+                           source_reference=ref, details=det)
+        return Finding(self.id, "weakens_explanation", f"Ships of this kind rarely slow down in this area "
+                       f"({pct:.0f} % of passages under 5 kn).", e, 0.0, self.lamp, source_reference=ref, details=det)
 
 
 EXPLAINER = Place()
