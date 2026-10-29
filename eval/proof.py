@@ -59,7 +59,8 @@ def assess(api: str, reqs: list[dict], sources: list[str], s: float) -> list[dic
         if r.status_code == 404:
             return [c.post(f"{api}/assessments", json={**q, "options": opts}).json() for q in reqs]
         r.raise_for_status()
-        return r.json()["results"]
+        body = r.json()
+        return body["results"] if isinstance(body, dict) else body
 
 
 def summary(results: list[dict], s: float) -> dict:

@@ -91,6 +91,7 @@ def main() -> int:
         flagged = flagged_windows()
         log(f"flagged windows from ledger: {len(flagged)}")
         profile_db.build(log=log, flagged=flagged)
+        run([PY, "tools/stop_areas.py"])
         if not a.no_copernicus:
             run([PY, "tools/fetch_copernicus.py", "--recent", "3"])
         run([PY, "tools/snapshot.py"])

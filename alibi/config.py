@@ -54,7 +54,7 @@ PROFILE_VERSION = os.environ.get("ALIBI_PROFILE_VERSION") or _V.get("profile_ver
 
 # Where and when the segment data behind own_habit, place and fleet exists:
 # (name, lon_min, lon_max, lat_min, lat_max, first day, day after the last), dates from the segment files.
-_BOXES = {"dk": (3.0, 18.5, 53.5, 59.0), "fi": (19.5, 30.5, 58.8, 61.0)}
+_BOXES = {"dk": (3.0, 18.5, 53.5, 59.0), "fi": (17.5, 30.5, 57.5, 66.0)}
 COVERAGE = [(src, *_BOXES[src], first, (date.fromisoformat(last) + timedelta(days=1)).isoformat())
             for src, (first, last) in SPANS.items() if src in _BOXES]
 # Finnish waters for the Traficom context layers (restriction areas, navigational warnings).

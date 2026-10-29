@@ -25,6 +25,7 @@ INCLUDE = [
     "derived/profile_db/vessel_profiles.parquet",
     "derived/profile_db/class_profiles.parquet",
     "derived/profile_db/vessel_keys.parquet",
+    "derived/profile_db/stop_areas.parquet",
     "derived/profile_db/segments",
     "derived/alibi_cache",
     "envcache",

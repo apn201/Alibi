@@ -51,7 +51,7 @@ def sync_tree(src: Path, dst: Path) -> int:
 def main() -> int:
     pdb = DATA / PDB
     (SNAP / PDB).mkdir(parents=True, exist_ok=True)
-    for name in ("vessel_profiles", "class_profiles", "vessel_keys", "identities"):
+    for name in ("vessel_profiles", "class_profiles", "vessel_keys", "identities", "stop_areas", "own_stops"):
         shutil.copy2(pdb / f"{name}.parquet", SNAP / PDB / f"{name}.parquet")
     copied = sync_tree(pdb / "segments", SNAP / PDB / "segments")
 
