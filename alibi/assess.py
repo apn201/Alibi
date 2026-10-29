@@ -13,7 +13,10 @@ Raises Unassessable (-> HTTP 422) when the track cannot carry an assessment.
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import math
+from collections import OrderedDict
 import time
 import uuid
 from datetime import datetime, timezone
@@ -300,17 +303,22 @@ def new_id() -> str:
     return f"asm_{int(time.time() * 1000):012x}{uuid.uuid4().hex[:12]}"
 
 
-def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> dict:
-    opts = options or req.options or AssessmentOptions()
+_PREPARED: "OrderedDict[str, dict]" = OrderedDict()
+_PREPARED_MAX = 4000
+
+
+def _prepare(req: AssessmentRequest, opts: AssessmentOptions) -> dict:
+    """Everything that does not depend on which sources are enabled: the context and one finding per source.
+    Cached per request and sensitivity, so re-running a case with other sources only recombines findings
+    (the GUI's source keys). Findings are independent of each other by design (alibi.explainers.base)."""
+    # Sensitivity only matters for the reference detector (track mode); explainers do not read it.
+    key = hashlib.sha1(req.model_dump_json(exclude={"options"}).encode()).hexdigest() +         (f"|{opts.sensitivity}" if req.event is None else "")
+    hit = _PREPARED.get(key)
+    if hit is not None:
+        _PREPARED.move_to_end(key)
+        return hit
     pdata = profiles.get()
     reg = registry()
-    enabled = list(config.SOURCE_IDS) if opts.enabled_sources is None else \
-        ["profile"] + [s for s in dict.fromkeys(opts.enabled_sources) if s != "profile"]
-    unknown = [s for s in enabled if s not in config.SOURCE_IDS]
-    if unknown:
-        raise BadRequest("unknown_source", f"Unknown source id(s): {', '.join(unknown)}.",
-                         {"known": config.SOURCE_IDS})
-    disabled = [s for s in config.SOURCE_IDS if s not in enabled]
     track = track_frame(req)
     if track["sog"].notna().sum() < config.MIN_TRACK_POINTS:
         raise Unassessable("track_too_short", f"The track needs at least {config.MIN_TRACK_POINTS} positions "
@@ -385,13 +393,11 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
                          "class_speed": ex.get("class_speed_kn"), "sigma": ex["sigma_kn"], "metadata": req.metadata or {},
                          "measure": measure, "event_type": event.get("event_type"), "summary": summary})
 
-    findings: list[Finding] = []
+    findings: dict[str, Finding] = {}
     for sid in config.SOURCE_IDS[1:]:
-        if sid not in enabled:
-            continue
         exp_ = reg[sid]
         if sid in BEHAVIOUR and sid not in APPLIES[measure]:
-            findings.append(Finding(sid, "neutral", NOT_APPLICABLE[measure], lamp=getattr(exp_, "lamp", None),
+            findings[sid] = (Finding(sid, "neutral", NOT_APPLICABLE[measure], lamp=getattr(exp_, "lamp", None),
                                     details={"measure": measure, "applies": False}))
             continue
         try:
@@ -407,7 +413,34 @@ def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> 
         elif kind == "quality" and sid not in APPLIES[measure]:
             f.explains, f.expected_delta_kn = 0.0, None
         f.explains = float(min(1.0, max(0.0, f.explains or 0.0)))
-        findings.append(f)
+        findings[sid] = f
+
+    state = dict(track=track, vessel=vessel, details=details, event=event, detected_by=detected_by, start=start,
+                 end=end, measure=measure, ex=ex, observed=observed, baseline=baseline, tier=tier, cov=cov, um=um, u=u,
+                 ctx=ctx, findings=findings)
+    _PREPARED[key] = state
+    while len(_PREPARED) > _PREPARED_MAX:
+        _PREPARED.popitem(last=False)
+    return state
+
+
+def assess(req: AssessmentRequest, options: AssessmentOptions | None = None) -> dict:
+    opts = options or req.options or AssessmentOptions()
+    pdata = profiles.get()
+    reg = registry()
+    enabled = list(config.SOURCE_IDS) if opts.enabled_sources is None else \
+        ["profile"] + [s for s in dict.fromkeys(opts.enabled_sources) if s != "profile"]
+    unknown = [s for s in enabled if s not in config.SOURCE_IDS]
+    if unknown:
+        raise BadRequest("unknown_source", f"Unknown source id(s): {', '.join(unknown)}.",
+                         {"known": config.SOURCE_IDS})
+    disabled = [s for s in config.SOURCE_IDS if s not in enabled]
+    st = _prepare(req, opts)
+    track, vessel, event, detected_by = st["track"], st["vessel"], copy.deepcopy(st["event"]), st["detected_by"]
+    start, end, measure, ex, observed, baseline = st["start"], st["end"], st["measure"], st["ex"], st["observed"], st["baseline"]
+    tier, cov, um, u, ctx = st["tier"], st["cov"], st["um"], st["u"], st["ctx"]
+    details = copy.deepcopy(st["details"])
+    findings = [st["findings"][sid] for sid in config.SOURCE_IDS[1:] if sid in enabled]
 
     x = None
     if u is not None:

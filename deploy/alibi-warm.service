@@ -1,0 +1,16 @@
+[Unit]
+Description=ALIBI warm-up: run the replay cases through the API once after it starts
+After=alibi-api.service
+Requires=alibi-api.service
+
+[Service]
+Type=oneshot
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+ExecStart=/opt/alibi/venv/bin/python tools/warm.py
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target

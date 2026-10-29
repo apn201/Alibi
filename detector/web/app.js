@@ -124,22 +124,35 @@ async function loadCase(c) {
   $("replay-stamp").textContent = "REPLAY · " + (stamp || srcLabel(c.case_id));
   $("board-sub").textContent = "· " + (S.kase.title || srcLabel(c.case_id)).toUpperCase();
   $("scope-sub").textContent = "· " + regionName(S.kase.region) + " · SCHEMATIC";
-  S.rows = (S.kase.requests || []).map((req, i) => {
+  S.allRows = (S.kase.requests || []).map((req, i) => {
     const md = req.metadata || {}, ev = req.event || {};
     return { id: ev.event_id || ("req-" + i), i, req, a: null, U: null, X: null, prevX: undefined,
       name: md.vessel_name || ev.vessel_id || "UNKNOWN", loa: md.length_m, imo: md.imo };
   });
+  S.rows = activeRows();
   S.sel = S.rows[0] ? S.rows[0].id : null;
   S.prevX = null; S.prevTop = null; S.rowEls = new Map(); $("board").innerHTML = "";
   await run({ kind: "load" });
 }
 
 /* ---------- running the case ---------- */
+/* The detector stores its most sensitive candidate set; each candidate carries the lowest rule tier that
+   also fires on it (rules.tier: s < 0.4 tier 0, s < 0.8 tier 1, else 2). The slider picks the set, so
+   moving it changes the detector's list as well as ALIBI's top band. */
+function ruleTier(s) { return s < 0.4 ? 0 : s < 0.8 ? 1 : 2; }
+function minTier(req) {
+  const bs = (req.event && req.event.baseline_summary) || {}, md = req.metadata || {};
+  return +(bs.min_tier != null ? bs.min_tier : md.min_tier != null ? md.min_tier : 0);
+}
+function activeRows() { return (S.allRows || []).filter(r => minTier(r.req) <= ruleTier(S.sens)); }
+
 function options() { return { sensitivity: S.sens, enabled_sources: S.sources.map(s => s.id).filter(id => S.enabled.has(id)) }; }
 
 async function run(what) {
   if (!S.kase) return;
   const seq = ++S.seq, opts = options();
+  S.rows = activeRows();
+  if (S.sel && !S.rows.some(r => r.id === S.sel)) S.sel = S.rows[0] ? S.rows[0].id : null;
   const before = new Map(S.rows.map(r => [r.id, r.X]));
   const beforeTop = S.rows.length && S.rows.some(r => r.a) ? topCount(what.prevSens) : null;
   document.body.classList.add("busy");
