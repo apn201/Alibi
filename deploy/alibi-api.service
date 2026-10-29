@@ -1,0 +1,25 @@
+[Unit]
+Description=ALIBI assessment API (Copernicus Marine Hackathon 2026 demo)
+After=network.target
+
+[Service]
+Type=simple
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=ALIBI_HOST=127.0.0.1
+Environment=ALIBI_PORT=8601
+Environment=PYTHONUTF8=1
+ExecStart=/opt/alibi/venv/bin/python -m alibi
+Restart=on-failure
+RestartSec=5
+# The service reads its data from /opt/alibi/app/data and writes only the ledger there.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/alibi/app/data
+MemoryMax=3G
+
+[Install]
+WantedBy=multi-user.target
