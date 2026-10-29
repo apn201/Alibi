@@ -37,6 +37,7 @@ from rules._core import iso
 ROOT = Path(__file__).resolve().parent.parent
 CASES_DIR = ROOT / "data" / "cases"
 PROFILE_DB = ROOT / "data" / "derived" / "profile_db"
+SNAPSHOT_PROFILE_DB = ROOT / "snapshot" / "derived" / "profile_db"  # a plain git clone has only this
 DMA_POSITIONS = Path("F:/alibi-data/dma/positions")
 DMA_SHIPS = Path("F:/alibi-data/dma/ships")
 MAX_BYTES = None  # set by --out: keep each case file under this (committed snapshots)
@@ -81,7 +82,8 @@ _VK = None
 def vessel_keys() -> pd.DataFrame:
     global _VK
     if _VK is None:
-        v = pd.read_parquet(PROFILE_DB / "vessel_keys.parquet")
+        path = PROFILE_DB / "vessel_keys.parquet"
+        v = pd.read_parquet(path if path.exists() else SNAPSHOT_PROFILE_DB / "vessel_keys.parquet")
         _VK = v.astype({"mmsi": "int64", "name": object, "group": object, "length": "float64"}).drop_duplicates("mmsi").set_index("mmsi")
     return _VK
 
