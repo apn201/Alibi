@@ -1,0 +1,12 @@
+[Unit]
+Description=ALIBI Copernicus Marine refresh: last 3 days and forecast into data/envcache
+
+[Service]
+Type=oneshot
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+Environment=PYTHONIOENCODING=utf-8
+Environment=HOME=/opt/alibi
+ExecStart=/opt/alibi/venv/bin/python tools/fetch_copernicus.py --recent 3

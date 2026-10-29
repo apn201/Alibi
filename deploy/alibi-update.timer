@@ -1,0 +1,9 @@
+[Unit]
+Description=ALIBI daily update at 06:00 (after the PC's nightly snapshot push at about 03:30-05:00)
+
+[Timer]
+OnCalendar=*-*-* 06:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

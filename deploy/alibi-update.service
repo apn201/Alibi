@@ -1,0 +1,10 @@
+[Unit]
+Description=ALIBI daily update: git pull (code and the nightly profile snapshot), purge old raw AIS, restart services
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/runuser -u alibi -- /usr/bin/git -C /opt/alibi/app pull --ff-only
+ExecStart=/usr/bin/runuser -u alibi -- /opt/alibi/venv/bin/pip install -q -r /opt/alibi/app/requirements-service.txt
+# The server keeps 3 days of raw AIS for the live case; history lives in the profiles (built on the PC).
+ExecStart=/usr/bin/find /opt/alibi/app/data/ais -name "ais-*.jsonl.gz*" -mtime +3 -delete
+ExecStart=/usr/bin/systemctl restart alibi-api alibi-gui alibi-live

@@ -1,0 +1,22 @@
+[Unit]
+Description=ALIBI live case: demo detector over the last 6 h of the recording, every 10 min
+After=alibi-recorder.service
+
+[Service]
+Type=simple
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+ExecStart=/opt/alibi/venv/bin/python -m detector live --ais-dir /opt/alibi/app/data/ais --every 600
+Restart=on-failure
+RestartSec=60
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/alibi/app/data
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target

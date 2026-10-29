@@ -1,0 +1,23 @@
+[Unit]
+Description=ALIBI AIS recorder (Fintraffic Digitraffic marine AIS over MQTT, Gulf of Finland)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+Environment=ALIBI_DATA_DIR=/opt/alibi/app/data/ais
+ExecStart=/opt/alibi/venv/bin/python -m alibi_recorder
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/alibi/app/data
+
+[Install]
+WantedBy=multi-user.target

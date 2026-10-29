@@ -1,0 +1,21 @@
+[Unit]
+Description=ALIBI demo GUI and replay cases (detector serve)
+After=network.target
+
+[Service]
+Type=simple
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+ExecStart=/opt/alibi/venv/bin/python -m detector serve --host 127.0.0.1 --port 8600
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/alibi/app/data
+
+[Install]
+WantedBy=multi-user.target

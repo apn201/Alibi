@@ -62,11 +62,17 @@ class _Grid:
 class EnvCache:
     def __init__(self, root: str | Path | None = None, lru: int = 48):
         self.root = Path(root) if root else default_root()
+        # A server fills data/envcache with recent days; the replay case days come with the repo.
+        snap = Path(__file__).resolve().parents[2] / "snapshot" / "envcache"
+        self.fallback = snap if root is None and snap != self.root else None
         self._lru: OrderedDict[Path, _Grid | None] = OrderedDict()
         self._max = lru
 
     def _grid(self, dataset: str, region: str, day: int) -> _Grid | None:
-        p = self.root / dataset / region / f"{dt.datetime.fromtimestamp(day * 86400, dt.timezone.utc):%Y%m%d}.nc"
+        rel = Path(dataset) / region / f"{dt.datetime.fromtimestamp(day * 86400, dt.timezone.utc):%Y%m%d}.nc"
+        p = self.root / rel
+        if not p.exists() and self.fallback is not None and (self.fallback / rel).exists():
+            p = self.fallback / rel
         if p in self._lru:
             self._lru.move_to_end(p)
             return self._lru[p]
