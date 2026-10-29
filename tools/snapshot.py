@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import glob
 import json
+import re
 import shutil
 import sys
 from datetime import datetime, timezone
@@ -72,6 +73,26 @@ def main() -> int:
             out = ctx / Path(f).relative_to(DATA / "context")
             out.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, out)
+
+    # Replay cases from open data only (Eagle S is third-party: results, not data). The live case is made on the server.
+    cases = SNAP / "cases"
+    cases.mkdir(parents=True, exist_ok=True)
+    kept = []
+    for f in sorted((DATA / "cases").glob("*.json")):
+        with open(f, encoding="utf-8") as fh:
+            head = fh.read(4096)
+        if f.name == "index.json" or f.stem.startswith("live_") or re.search(r'"third_party":\s*true', head):
+            continue
+        shutil.copy2(f, cases / f.name)
+        kept.append(f.stem)
+    for f in cases.glob("*.json"):
+        if f.stem not in kept and f.name != "index.json":
+            f.unlink()
+    idx = json.loads((DATA / "cases" / "index.json").read_text(encoding="utf-8"))
+    rows = idx["cases"] if isinstance(idx, dict) else idx
+    rows = [c for c in rows if c.get("case_id") in kept]
+    (cases / "index.json").write_text(json.dumps({"cases": rows} if isinstance(idx, dict) else rows, indent=1),
+                                      encoding="utf-8")
 
     spans = {}
     for src in ("dk", "fi"):

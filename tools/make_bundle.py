@@ -10,6 +10,7 @@ data (Eagle S, `"third_party": true` in the case file) is left out: we show resu
 from __future__ import annotations
 
 import io
+import re
 import json
 import subprocess
 import sys
@@ -43,7 +44,7 @@ def third_party_cases() -> set[str]:
             continue
         with open(f, encoding="utf-8") as fh:
             head = fh.read(4096)
-        if '"third_party": true' in head:
+        if re.search(r'"third_party":\s*true', head):
             out.add(f.name)
     return out
 
