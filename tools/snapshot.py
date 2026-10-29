@@ -1,0 +1,93 @@
+"""Copy what the ALIBI service needs from data/ into snapshot/, which is committed to the repo.
+
+    python tools/snapshot.py          -> snapshot/ (same layout as data/), snapshot/VERSION.json
+
+The raw AIS (our recording, the Danish archive) stays out of the repo: once processed, the
+history lives in the profile DB, and new days arrive through the nightly job (tools/nightly.py).
+A server can then run from a plain `git clone`. Only the latest snapshot of each slow-changing
+context layer is kept; the GUR list is cut down to its vessel entries.
+"""
+
+from __future__ import annotations
+
+import glob
+import json
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = ROOT / "data"
+SNAP = ROOT / "snapshot"
+PDB = "derived/profile_db"
+LATEST_ONLY = ["restriction_areas", "waterway_signs", "fairways_vl1", "fairways_vl2"]
+ALL_OF = ["nav_warnings_a", "nav_warnings_l", "nav_warnings_p"]
+
+
+def sync_tree(src: Path, dst: Path) -> int:
+    """Copy new or changed files, remove files that are gone from src. Returns files copied."""
+    n = 0
+    dst.mkdir(parents=True, exist_ok=True)
+    keep = set()
+    for f in src.rglob("*"):
+        if f.is_dir():
+            continue
+        rel = f.relative_to(src)
+        keep.add(rel)
+        out = dst / rel
+        if out.exists() and out.stat().st_size == f.stat().st_size and out.stat().st_mtime >= f.stat().st_mtime:
+            continue
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, out)
+        n += 1
+    for f in list(dst.rglob("*")):
+        if f.is_file() and f.relative_to(dst) not in keep:
+            f.unlink()
+    return n
+
+
+def main() -> int:
+    pdb = DATA / PDB
+    (SNAP / PDB).mkdir(parents=True, exist_ok=True)
+    for name in ("vessel_profiles", "class_profiles", "vessel_keys", "identities"):
+        shutil.copy2(pdb / f"{name}.parquet", SNAP / PDB / f"{name}.parquet")
+    copied = sync_tree(pdb / "segments", SNAP / PDB / "segments")
+
+    sanc = SNAP / "external" / "sanctions"
+    sanc.mkdir(parents=True, exist_ok=True)
+    for f in (DATA / "external" / "sanctions").glob("dma_eu_designated_vessels_*.csv"):
+        shutil.copy2(f, sanc / f.name)
+    gur = DATA / "external" / "sanctions" / "opensanctions_ua_war_sanctions_entities.ftm.json"
+    if gur.exists():
+        with open(gur, encoding="utf-8") as src, open(sanc / gur.name, "w", encoding="utf-8", newline="\n") as dst:
+            dst.writelines(line for line in src if '"schema":"Vessel"' in line)
+
+    ctx = SNAP / "context"
+    if ctx.exists():
+        shutil.rmtree(ctx)
+    for layer in LATEST_ONLY + ALL_OF:
+        files = sorted(glob.glob(str(DATA / "context" / layer / "*" / "*" / "*" / "*.json.gz")))
+        for f in files[-1:] if layer in LATEST_ONLY else files:
+            out = ctx / Path(f).relative_to(DATA / "context")
+            out.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(f, out)
+
+    spans = {}
+    for src in ("dk", "fi"):
+        days = sorted(p.stem for p in (SNAP / PDB / "segments" / src).glob("*.parquet"))
+        if days:
+            spans[src] = [days[0], days[-1]]
+    last = max(s[1] for s in spans.values())
+    version = {"profile_version": f"pdb-{last}", "built_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+               "spans": spans,
+               "sources": {"dk": "Danish Maritime Authority AIS archive (aisdata.ais.dk)",
+                           "fi": "Fintraffic Digitraffic marine AIS, recorded by ALIBI (CC BY 4.0)"}}
+    (SNAP / "VERSION.json").write_text(json.dumps(version, indent=1) + "\n", encoding="utf-8")
+    size = sum(f.stat().st_size for f in SNAP.rglob("*") if f.is_file())
+    print(f"snapshot {version['profile_version']}: {copied} segment files copied, {size / 1e6:.0f} MB in snapshot/")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

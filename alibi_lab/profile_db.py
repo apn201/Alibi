@@ -157,12 +157,27 @@ def _profile_rows(segs: pd.DataFrame, by: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build(log=print) -> dict:
-    """Bring segments up to date, then rebuild identities and profiles. Returns counts."""
+def drop_flagged(segs: pd.DataFrame, flagged: pd.DataFrame | None) -> pd.DataFrame:
+    """Leave out segments that overlap a window ALIBI could not explain: don't learn from what you flag.
+    flagged: mmsi, start, end (epoch s)."""
+    if flagged is None or flagged.empty:
+        return segs
+    m = segs.reset_index().merge(flagged, on="mmsi")
+    hit = m.loc[(m["t0"] <= m["end"]) & (m["t1"] >= m["start"]), "index"].unique()
+    return segs.drop(index=hit)
+
+
+def build(log=print, flagged: pd.DataFrame | None = None) -> dict:
+    """Bring segments up to date, then rebuild identities and profiles. Returns counts.
+    `flagged` windows (mmsi, start, end) are kept as segments but left out of the profiles."""
     new_dk, new_fi = segments_dk(log), segments_fi(log)
     ids = identities()
     keys = vessel_keys(ids)
     segs = duckdb.sql(f"select * from read_parquet('{(DB / 'segments').as_posix()}/*/*.parquet', union_by_name=true)").df()
+    n_all = len(segs)
+    segs = drop_flagged(segs, flagged)
+    if len(segs) < n_all:
+        log(f"left out of profiles (unexplained windows): {n_all - len(segs)} segments")
     segs = segs.merge(keys[["mmsi", "vessel_key", "cls", "group"]], on="mmsi", how="left")
     segs["vessel_key"] = segs["vessel_key"].fillna("MMSI" + segs["mmsi"].astype(str))
     segs["cls"] = segs["cls"].fillna("unknown/?")
