@@ -1,0 +1,19 @@
+{
+  "type": "FeatureCollection",
+  "name": "alibi-demo-cable-corridors",
+  "comment": "APPROXIMATE, SCHEMATIC. Hand-made straight segments between published landing points (Wikipedia and operator pages: Elering/Fingrid, Gasgrid/Elering, Cinia, Elisa/Telia). Real routes bend and are not published to this accuracy; uncertainty_km is the half-width of the buffer we test against. Only the main Gulf of Finland links, not a complete cable register. Not for navigation.",
+  "features": [
+    {"type": "Feature", "properties": {"id": "estlink1", "name": "Estlink 1 (power)", "uncertainty_km": 3.0, "source": "Wikipedia 'Estlink'; landing points Harku (EE) and Espoo (FI). Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[24.62, 60.15], [24.58, 59.42]]}},
+    {"type": "Feature", "properties": {"id": "estlink2", "name": "Estlink 2 (power)", "uncertainty_km": 4.0, "source": "Wikipedia 'Estlink'; landing points Anttila, Porvoo (FI) and Puessi (EE). Middle vertex placed at the crossing position published in the Eagle S technical report (about 59.95 N 26.10 E), so the line passes where the report says the cable is. Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[25.62, 60.30], [26.10, 59.95], [27.10, 59.45]]}},
+    {"type": "Feature", "properties": {"id": "balticconnector_gas", "name": "Balticconnector (gas pipeline)", "uncertainty_km": 3.0, "source": "Wikipedia 'Balticconnector'; landing points Inkoo (FI) and Paldiski (EE). Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[24.02, 59.96], [24.04, 59.36]]}},
+    {"type": "Feature", "properties": {"id": "balticconnector_telecom", "name": "Balticconnector telecom cable", "uncertainty_km": 3.0, "source": "Runs roughly parallel to the gas pipeline (Elisa/Cinia reports of the 2023 damage); drawn about 1 km east of it. Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[24.035, 59.96], [24.055, 59.36]]}},
+    {"type": "Feature", "properties": {"id": "clion1", "name": "C-Lion1 (telecom, Helsinki to Rostock)", "uncertainty_km": 3.0, "source": "Cinia public route description; Gulf of Finland part only, a coarse polyline from Vuosaari (Helsinki) westward. Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[25.19, 60.20], [24.20, 59.92], [22.90, 59.60], [21.50, 59.42], [20.30, 59.25]]}},
+    {"type": "Feature", "properties": {"id": "fec", "name": "Finland-Estonia telecom cables (FEC family, Helsinki to Tallinn)", "uncertainty_km": 3.0, "source": "Operator descriptions (Elisa, Telia); a single straight segment stands in for several parallel cables. Approximate, schematic."},
+     "geometry": {"type": "LineString", "coordinates": [[24.93, 60.15], [24.76, 59.45]]}}
+  ]
+}
