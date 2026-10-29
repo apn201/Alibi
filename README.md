@@ -76,6 +76,7 @@ python -m venv .venv
 .venv/Scripts/pip install -r requirements-service.txt     # Linux: .venv/bin/pip
 python -m alibi                                            # API on 127.0.0.1:8601, Swagger at /api/v1/docs
 python -m detector serve                                   # GUI on 127.0.0.1:8600
+python tools/warm.py                                       # optional: run the cases once, so the GUI is fast
 ```
 
 A plain clone runs: the profiles, the Copernicus data for the replay cases, the replay cases and the reference lists are in `snapshot/`. Raw AIS is not in the repo; the history lives in the profiles.
