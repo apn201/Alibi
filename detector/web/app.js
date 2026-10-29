@@ -60,9 +60,32 @@ async function boot() {
   await loadSources();
   await loadCases();
   getJSON(S.caseBase + "corridors.geojson", 4000).then(j => { S.corridors = j; scope(); }).catch(() => {});
-  const want = decodeURIComponent((location.hash.match(/case=([^&]+)/) || [])[1] || "");
+  /* Link options, for demos and screenshots: #case=<id>&src=a,b,c&s=0.5&then=<source id>&sel=<name>.
+     src sets the enabled sources, s the sensitivity; then switches one source over after the case has
+     loaded, so the page opens on a before -> after; sel opens that ship's recognition sheet. */
+  const hp = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const want = hp.get("case") || "";
+  if (hp.get("src")) {
+    const ids = hp.get("src").split(",");
+    S.enabled = new Set(S.sources.map(x => x.id).filter(id => ids.includes(id)).concat("profile"));
+    renderSourceKeys();
+  }
+  if (hp.get("s") != null && !isNaN(+hp.get("s"))) {
+    S.sens = Math.min(1, Math.max(0, +hp.get("s")));
+    $("sens").value = S.sens; $("sens-val").textContent = S.sens.toFixed(2);
+  }
   const first = S.cases.find(c => c.case_id === want) || S.cases[0];
-  if (first) loadCase(first); else boardMessage("No cases found. The detector writes them to cases/index.json.");
+  if (!first) { boardMessage("No cases found. The detector writes them to cases/index.json."); return; }
+  await loadCase(first);
+  const sel = (hp.get("sel") || "").toUpperCase();
+  const pick = () => {
+    const r = sel && S.rows.find(r => (r.name || "").toUpperCase().includes(sel));
+    if (r) select(r.id);
+  };
+  pick();
+  const then = hp.get("then");
+  const key = then && [...document.querySelectorAll("#source-keys [data-src]")].find(b => b.dataset.src === then);
+  if (key) { key.click(); const wait = () => document.body.classList.contains("busy") ? setTimeout(wait, 200) : pick(); setTimeout(wait, 300); }
 }
 
 function setLamps() {
