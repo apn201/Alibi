@@ -1,0 +1,337 @@
+openapi: 3.1.0
+info:
+  title: ALIBI Assessment API
+  version: 1.0.0
+  summary: Evidence-backed triage for unusual maritime events
+  description: >-
+    Accepts a candidate event from an AIS or maritime monitoring client and
+    returns a structured assessment of what is unusual, what available evidence
+    helps explain it, and what remains unexplained. An unexplained assessment is
+    not a claim of hostile intent. This is an initial hackathon contract; only
+    endpoints implemented by the running prototype should be considered live.
+servers:
+  - url: https://api.example.invalid/api/v1
+    description: Placeholder; replace with the selected helppox.com or apn201.com deployment URL
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Check service health
+      responses:
+        '200':
+          description: Service is responding
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, api_version]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  api_version:
+                    type: string
+                  dependencies:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      enum: [ok, degraded, unavailable, not_checked]
+  /assessments:
+    post:
+      operationId: createAssessment
+      summary: Assess an unusual AIS event
+      description: >-
+        The caller may provide an event detected upstream, a track window, and
+        optional metadata. The service records the configuration used and
+        returns source-attributed findings. Missing data lowers confidence; it
+        does not automatically increase suspicion.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+      responses:
+        '200':
+          description: Assessment completed synchronously
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+        '202':
+          description: Assessment accepted for asynchronous processing (optional future behaviour)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentAccepted'
+        '400':
+          description: Invalid request or unsupported units
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Request payload exceeds configured limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Request is structurally valid but cannot be assessed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /assessments/{assessment_id}:
+    get:
+      operationId: getAssessment
+      summary: Retrieve an assessment and its evidence
+      parameters:
+        - name: assessment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assessment found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+        '404':
+          description: Assessment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    AssessmentRequest:
+      type: object
+      required: [track]
+      description: >-
+        Event mode: an event detected upstream plus its track. Track mode: a
+        track without an event; the service runs its reference detector over it
+        and assesses what it finds, so upstream systems that flag nothing can
+        still integrate.
+      properties:
+        event:
+          $ref: '#/components/schemas/CandidateEvent'
+        track:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/AisObservation'
+        metadata:
+          type: object
+          description: Optional caller-provided metadata; preserve source attribution.
+          additionalProperties: true
+        options:
+          $ref: '#/components/schemas/AssessmentOptions'
+    CandidateEvent:
+      type: object
+      required: [event_id, event_type, start_time, end_time]
+      properties:
+        event_id:
+          type: string
+          description: Identifier assigned by the upstream detector.
+        event_type:
+          type: string
+          description: For example slowdown, loitering, or route_deviation.
+        vessel_id:
+          type: string
+          description: MMSI or another identifier, with identifier_type specified when ambiguous.
+        identifier_type:
+          type: string
+          enum: [MMSI, IMO, other]
+        start_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp; use UTC.
+        end_time:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp; use UTC.
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        baseline_summary:
+          type: object
+          description: Optional baseline/detector context from the upstream tool.
+          additionalProperties: true
+    AisObservation:
+      type: object
+      required: [timestamp, latitude, longitude]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp; use UTC.
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        sog_knots:
+          type: number
+          minimum: 0
+          description: Speed over ground in knots.
+        cog_degrees:
+          type: number
+          minimum: 0
+          maximum: 360
+          description: Course over ground in degrees.
+        heading_degrees:
+          type: number
+          minimum: 0
+          maximum: 360
+        nav_status:
+          type: string
+        pos_acc:
+          type: boolean
+          description: Position-accuracy flag, when supplied by the source.
+        raim:
+          type: boolean
+          description: RAIM flag, when supplied by the source.
+        source:
+          type: string
+          description: Input feed or archive identifier.
+    GeoPoint:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    AssessmentOptions:
+      type: object
+      properties:
+        sensitivity:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.5
+          description: Prototype sensitivity setting; precise semantics must be documented by implementation.
+        enabled_sources:
+          type: array
+          items:
+            type: string
+          description: Explicit source IDs to include in this run.
+        include_evidence:
+          type: boolean
+          default: true
+    AssessmentAccepted:
+      type: object
+      required: [assessment_id, status]
+      properties:
+        assessment_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing]
+    Assessment:
+      type: object
+      required: [assessment_id, api_version, assessed_at, event, measures, confidence, findings, configuration, limitations]
+      properties:
+        assessment_id:
+          type: string
+        api_version:
+          type: string
+        assessed_at:
+          type: string
+          format: date-time
+        event:
+          $ref: '#/components/schemas/CandidateEvent'
+        measures:
+          type: object
+          required: [unusual, unexplained]
+          properties:
+            unusual:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Deviation from the configured baseline; not a threat score.
+            unexplained:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Portion of the deviation not accounted for by evidence available to this run.
+        confidence:
+          type: object
+          required: [level, reasons]
+          properties:
+            level:
+              type: string
+              enum: [low, medium, high]
+            reasons:
+              type: array
+              items:
+                type: string
+        findings:
+          type: array
+          items:
+            type: object
+            required: [source_id, status, summary]
+            properties:
+              source_id:
+                type: string
+              status:
+                type: string
+                enum: [supports_explanation, weakens_explanation, neutral, unavailable, identity_context_only]
+              summary:
+                type: string
+              observed_at:
+                type: string
+                format: date-time
+              source_reference:
+                type: string
+              details:
+                type: object
+                additionalProperties: true
+        configuration:
+          type: object
+          required: [sensitivity, enabled_sources, model_version, profile_version]
+          properties:
+            profile_version:
+              type: string
+              description: Profile snapshot used as the baseline (one per nightly build), so a re-run reproduces the result.
+            detected_by:
+              type: string
+              enum: [upstream, reference_detector]
+              description: Whether the event came from the caller or from the service's own detector (track mode).
+            sensitivity:
+              type: number
+              minimum: 0
+              maximum: 1
+            enabled_sources:
+              type: array
+              items:
+                type: string
+            model_version:
+              type: string
+        limitations:
+          type: array
+          items:
+            type: string
+        audit_reference:
+          type: string
+          description: Reference to the recorded input/configuration/evidence ledger, if enabled.
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

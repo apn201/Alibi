@@ -1,0 +1,17 @@
+services:
+  recorder:
+    build: .
+    image: alibi-recorder:0.1
+    container_name: alibi-recorder
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      ALIBI_DATA_DIR: /data/ais
+    volumes:
+      # Host folder for the recording. Override with ALIBI_HOST_DATA=/some/disk/alibi-data
+      - ${ALIBI_HOST_DATA:-./data}:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

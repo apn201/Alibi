@@ -1,0 +1,245 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Alibi Watch Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: grey steel console bezel; main screen = signature board sorted by delta; side = small chart scope + paper recognition sheet clipped to the bezel. Single dark look by choice. */
+:root{
+  --steel:#8d939a; --steel-hi:#b9bec4; --steel-lo:#5c6168; --bezel:#2a2e33;
+  --screen:#06142a; --screen-2:#0b1f3d; --grid:#15315a;
+  --trace:#5fd3ff; --band:#2c6aa8; --band-fill:rgba(120,190,255,.13); --band-edge:rgba(140,200,255,.38);
+  --amber:#ffb53d; --red:#ff5a4a; --ok:#6fe39a; --dim:#5b7aa3;
+  --paper:#e9e6dc; --ink:#14171a; --ink-2:#5a5d60;
+  --f-display:"Chakra Petch","Arial Narrow",sans-serif;
+  --f-data:"Share Tech Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--steel);color:var(--trace);font-family:var(--f-data);margin:0;padding:14px 16px 20px;box-sizing:border-box;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px)}
+*{box-sizing:border-box}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--steel-lo);border:2px solid;border-color:var(--steel-hi) var(--bezel) var(--bezel) var(--steel-hi);padding:8px 14px;margin-bottom:12px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.18em;color:var(--paper)}
+.brand small{font-size:11px;letter-spacing:.2em;color:var(--steel-hi);margin-left:10px;font-weight:600}
+.lamp{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--paper);letter-spacing:.08em}
+.lamp i{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.lamp.off i{background:#3a3f45;box-shadow:none}
+.clock{margin-left:auto;font-size:18px;color:var(--amber);background:var(--screen);padding:2px 10px;border:2px inset var(--steel-lo);font-variant-numeric:tabular-nums}
+.sample{font-size:11px;letter-spacing:.12em;color:var(--ink);background:var(--amber);padding:2px 8px;font-family:var(--f-display);font-weight:700}
+.deck{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:12px}
+@media (max-width:1100px){.deck{grid-template-columns:1fr}}
+.unit{background:var(--steel-lo);border:2px solid;border-color:var(--steel-hi) var(--bezel) var(--bezel) var(--steel-hi);padding:10px;min-width:0}
+.plate{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.22em;color:var(--paper);margin:0 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.plate b{color:var(--steel-hi);font-weight:500}
+.screen{background:var(--screen);border:3px solid var(--bezel);box-shadow:inset 0 0 40px rgba(0,0,0,.7),inset 0 0 0 1px #000;position:relative;overflow:hidden}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+.keys{display:flex;gap:6px;flex-wrap:wrap}
+.key{font-family:var(--f-display);font-weight:700;font-size:11px;letter-spacing:.12em;background:var(--steel);color:var(--ink);border:2px solid;border-color:var(--steel-hi) var(--bezel) var(--bezel) var(--steel-hi);padding:5px 10px;cursor:pointer}
+.key[aria-pressed="true"]{background:var(--amber);border-color:var(--bezel) var(--steel-hi) var(--steel-hi) var(--bezel)}
+.key:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+/* board */
+.head,.row{display:grid;grid-template-columns:62px 168px minmax(0,1.25fr) minmax(0,1fr) 128px;gap:10px;align-items:center;padding:6px 10px}
+.head{font-size:10px;letter-spacing:.16em;color:var(--dim);border-bottom:1px solid var(--grid)}
+.row{border-bottom:1px solid var(--grid);cursor:pointer;position:relative}
+.row:hover{background:rgba(95,211,255,.05)}
+.row[aria-selected="true"]{background:rgba(255,181,61,.08);box-shadow:inset 3px 0 0 var(--amber)}
+.row:focus-visible{outline:1px solid var(--trace);outline-offset:-2px}
+.delta{font-size:22px;font-variant-numeric:tabular-nums;line-height:1}
+.delta small{display:block;font-size:9px;letter-spacing:.14em;color:var(--dim);margin-top:3px}
+.id b{display:block;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.06em;color:#d9f3ff}
+.id span{font-size:11px;color:var(--dim)}
+.tag{font-size:9px;letter-spacing:.12em;padding:1px 4px;border:1px solid currentColor;margin-left:4px}
+canvas.tr{width:100%;height:46px;display:block}
+.fx{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.fx i{font-style:normal;font-size:9px;text-align:center;padding:2px 0;border:1px solid var(--grid);color:var(--dim)}
+.fx i.ex{color:var(--ok);border-color:var(--ok)}
+.fx i.no{color:var(--red);border-color:var(--red)}
+@media (max-width:760px){
+  .head{display:none}
+  .row{grid-template-columns:56px minmax(0,1fr);}
+  .row canvas.tr,.row .fx{grid-column:1/-1}
+}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--dim);padding:8px 10px;letter-spacing:.08em}
+.legend span::before{content:"";display:inline-block;width:14px;height:6px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.legend span.bandkey::before{background:var(--band-fill);border-top:1px solid var(--band-edge);border-bottom:1px solid var(--band-edge);height:8px}
+.legend span.raw::before{background:none;height:0;border-top:1px dashed var(--band-edge)}
+/* side */
+.side{display:grid;gap:12px;align-content:start;min-width:0}
+canvas#scope{width:100%;height:210px;display:block}
+.sheet{background:var(--paper);color:var(--ink);padding:14px 16px 16px;position:relative;box-shadow:2px 3px 0 var(--bezel);font-family:var(--f-display)}
+.sheet::before{content:"";position:absolute;top:-7px;left:50%;width:70px;height:14px;margin-left:-35px;background:var(--steel-hi);border:1px solid var(--steel-lo)}
+.sheet h2{margin:0;font-size:22px;letter-spacing:.08em;font-weight:700;text-wrap:balance}
+.sheet .cls{font-size:11px;letter-spacing:.2em;color:var(--ink-2);font-weight:600}
+canvas#sil{width:100%;height:84px;display:block;margin:8px 0 2px;border-bottom:1px solid var(--ink)}
+.dims{display:flex;justify-content:space-between;font-family:var(--f-data);font-size:11px;color:var(--ink-2);margin-bottom:10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;margin:0 0 10px}
+.kv dt{letter-spacing:.14em;font-size:10px;color:var(--ink-2);font-weight:600;align-self:center}
+.kv dd{margin:0;font-family:var(--f-data)}
+.sig{background:var(--screen);border:3px solid var(--ink);margin:4px 0 10px}
+canvas#sig{width:100%;height:120px;display:block}
+.facts{list-style:none;margin:0;padding:0;font-size:12px;display:grid;gap:5px}
+.facts li{display:grid;grid-template-columns:62px 1fr;gap:8px;line-height:1.35}
+.facts b{font-family:var(--f-data);font-size:10px;letter-spacing:.06em;padding:1px 0;text-align:center;border:1px solid var(--ink);align-self:start}
+.facts .ex b{background:var(--ink);color:var(--paper)}
+.facts .no b{background:#b8281c;border-color:#b8281c;color:var(--paper)}
+.facts .na b{color:var(--ink-2);border-style:dashed}
+.stamp{position:absolute;right:14px;top:14px;font-size:10px;letter-spacing:.14em;border:2px solid #b8281c;color:#b8281c;padding:3px 6px;transform:rotate(4deg);font-weight:700}
+.foot{font-size:10px;color:var(--ink);letter-spacing:.06em;margin-top:12px;line-height:1.5}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+
+<div class="bar">
+  <div class="brand">ALIBI<small>AUTOMATIC LOOKOUT FOR IRREGULAR BALTIC ITINERARIES</small></div>
+  <span class="lamp"><i></i>AIS FEED</span>
+  <span class="lamp"><i></i>RECORDER</span>
+  <span class="lamp off"><i></i>COPERNICUS WX</span>
+  <span class="sample">SAMPLE DATA · CONCEPT</span>
+  <span class="clock" id="clock">--:--:-- UTC</span>
+</div>
+
+<div class="deck">
+  <section class="unit">
+    <div class="plate">SIGNATURE BOARD <b>· LAST 6 H · 1-MIN WINDOWS</b>
+      <span style="margin-left:auto" class="keys" role="group" aria-label="Sort">
+        <button class="key" id="s-unx" aria-pressed="true">SORT Δ UNEXPLAINED</button>
+        <button class="key" id="s-unu" aria-pressed="false">Δ UNUSUAL</button>
+        <button class="key" id="s-name" aria-pressed="false">NAME</button>
+      </span>
+    </div>
+    <div class="screen">
+      <div class="head"><span>Δ</span><span>VESSEL</span><span>SPEED KN · RECORDED vs EXPECTED</span><span>HEADING °</span><span>FACTORS</span></div>
+      <div id="board" role="listbox" aria-label="Vessels"></div>
+      <div class="legend">
+        <span class="bandkey">expected band (profile adjusted for place, weather, ice, traffic)</span>
+        <span class="raw">profile alone, where the band was adjusted</span>
+        <span style="--c:var(--trace)">recorded</span>
+        <span style="--c:var(--amber)">unusual, explained</span>
+        <span style="--c:var(--red)">outside the band, unexplained</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section class="unit">
+      <div class="plate">CHART SCOPE <b>· GULF OF FINLAND · SCHEMATIC</b></div>
+      <div class="screen"><canvas id="scope"></canvas></div>
+    </section>
+    <article class="sheet" id="sheet" aria-live="polite"></article>
+  </aside>
+</div>
+
+<script>
+const C=getComputedStyle(document.documentElement);const tok=n=>C.getPropertyValue(n).trim();
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
+const N=360;
+// Factor order: WX current/wind/waves, ICE, PLACE, GNSS position quality, TRAFFIC
+const FX=["WX","ICE","PLC","GNSS","TRF"];
+const SHIPS=[
+ {name:"EAGLE S",tag:"REPLAY",cls:"TANKER · L",kind:"tanker",len:228,beam:32,tier:"PROTOTYPE",conf:"LOW · 1 DAY OF DATA",lon:25.6,lat:59.95,unu:.91,unx:.88,
+  exp:12,spr:.35,hdg:262,evt:"drop",fx:["na","ex0","no","ex","ex0"],
+  facts:[["no","SLOWED","Slowed from 12 to about 9 kn within 15 minutes and stayed there."],["no","PLACE","No anchorage, pilot area or approach here."],["na","WEATHER","Not checked. Weather data is not loaded for this replay."],["ex","POSITION","Position quality normal."]],
+  stamp:"REPLAY · 25 DEC 2024"},
+ {name:"NORDIC TERN",cls:"CARGO · M",kind:"cargo",len:118,beam:18,tier:"OWN PROFILE",conf:"HIGH · 31 JOURNEYS",lon:24.75,lat:60.08,unu:.82,unx:.12,
+  exp:10.5,spr:.4,hdg:84,evt:"loiter",fx:["ex0","ex0","ex","ex","ex0"],
+  facts:[["ex","PLACE","Stopped at a known anchorage. Ships of this class wait here."],["ex","WEATHER","Wind and waves normal for the area."],["ex","POSITION","Position quality normal."]]},
+ {name:"KAPELLA BAY",cls:"TANKER · XL",kind:"tanker",len:250,beam:44,tier:"PROTOTYPE",conf:"MEDIUM",lon:23.1,lat:59.6,unu:.64,unx:.18,
+  exp:13,spr:.4,hdg:70,evt:"weather",fx:["ex","ex0","ex0","ex","ex0"],
+  facts:[["ex","WEATHER","Slower than usual. Head wind and 3 m waves explain it."],["ex","POSITION","Position quality normal."]]},
+ {name:"ARKTIKA VII",cls:"BULK · L",kind:"bulk",len:190,beam:30,tier:"JOURNEY",conf:"MEDIUM · 4 H OF JOURNEY",lon:27.4,lat:60.05,unu:.77,unx:.61,
+  exp:11,spr:.4,hdg:250,evt:"gnss",fx:["ex","ex0","ex0","no","ex0"],
+  facts:[["no","POSITION","Positions jump 2 to 8 km. Speed spikes follow the jumps."],["na","GNSS","Possible interference. Other ships nearby show the same jumps."],["ex","WEATHER","Weather does not explain it."]]},
+ {name:"LINDHOLM",cls:"CARGO · S",kind:"cargo",len:88,beam:13,tier:"OWN PROFILE",conf:"HIGH · 12 JOURNEYS",lon:28.6,lat:60.35,unu:.58,unx:.21,
+  exp:9,spr:.5,hdg:300,evt:"ice",fx:["ex0","ex","ex0","ex","ex"],
+  facts:[["ex","ICE","Following a broken channel through ice. The zigzag matches it."],["ex","TRAFFIC","Convoy behind an icebreaker."]]},
+ {name:"SAIMA RUNNER",cls:"PASSENGER · L",kind:"ferry",len:212,beam:31,tier:"OWN PROFILE",conf:"HIGH · 86 CROSSINGS",lon:24.6,lat:59.75,unu:.09,unx:.05,
+  exp:21,spr:.3,hdg:184,evt:"none",fx:["ex0","ex0","ex0","ex","ex0"],
+  facts:[["ex","SIGNATURE","On its own signature. Nothing to explain."]]},
+ {name:"BALTIC WREN",cls:"CARGO · M",kind:"cargo",len:126,beam:20,tier:"PROTOTYPE",conf:"MEDIUM",lon:22.3,lat:59.75,unu:.14,unx:.07,
+  exp:11.5,spr:.4,hdg:40,evt:"none",fx:["ex0","ex0","ex0","ex","ex0"],
+  facts:[["ex","SIGNATURE","Within the class signature."]]},
+ {name:"MERIKOTKA",tag:"WORK",cls:"TUG · S",kind:"tug",len:32,beam:11,tier:"WORKING VESSEL",conf:"NO HEAT",lon:24.95,lat:60.15,unu:null,unx:null,
+  exp:6,spr:2.2,hdg:120,evt:"tug",fx:["na","na","na","na","na"],
+  facts:[["na","WORKING","Tugs loiter and turn for a living. Shown, not scored."]]},
+];
+// synth tracks
+// raw = the profile alone (own / prototype / journey). ex,bw = the band after place, weather, ice etc. have had their say.
+// Outside raw only -> unusual but explained (amber). Outside the adjusted band -> unexplained (red).
+SHIPS.forEach((s,i)=>{const r=rng(i*97+13);const sp=[],raw=[],ex=[],bw=[],hd=[],st=[],why=[];const B=Math.max(1.2,s.spr*3);
+ for(let t=0;t<N;t++){let e=s.exp,b=B,o=s.exp+(r()-.5)*s.spr*1.6,hh=s.hdg+(r()-.5)*2,w="";
+  if(s.evt==="drop"&&t>300){o=t<315?s.exp-(t-300)/15*3:9+(r()-.5)*.5}
+  if(s.evt==="loiter"&&t>150){const k=Math.min(1,(t-150)/30);e=s.exp*(1-k)+.4*k;b=B*(1-k)+.9*k;o=t<180?e+(r()-.5)*.3:0.3+r()*.5;hh=s.hdg+Math.sin(t/25)*80;w="PLACE"}
+  if(s.evt==="weather"&&t>120){const k=Math.min(1,(t-120)/20);e=s.exp-2.6*k;o=s.exp-2.6+(r()-.5)*.8;w="WEATHER"}
+  if(s.evt==="gnss"&&t>200&&t<290){if(r()<.18)o=s.exp+8+r()*14;if(r()<.12)hh=s.hdg+(r()-.5)*160}
+  if(s.evt==="ice"&&t>90){const k=Math.min(1,(t-90)/20);e=s.exp-3*k;b=B+.8*k;o=6+(r()-.5)*1.4;hh=s.hdg+Math.sin(t/6)*22;w="ICE"}
+  if(s.evt==="tug"){o=Math.max(0,6+Math.sin(t/17)*5+(r()-.5)*2);hh=(s.hdg+t*3+(r()-.5)*30)%360}
+  if(s.evt==="none"&&t>200&&s.kind!=="ferry")hh+=25;
+  o=Math.max(0,o);sp.push(o);raw.push(s.exp);ex.push(e);bw.push(b);hd.push(hh);why.push(w);
+  st.push(Math.abs(o-e)>b?2:Math.abs(o-s.exp)>B?1:0);}
+ Object.assign(s,{sp,raw,ex,bw,hd,st,why,B});});
+
+function fit(cv){const d=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==w*d||cv.height!==h*d){cv.width=w*d;cv.height=h*d}const g=cv.getContext("2d");g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);return[g,w,h]}
+function grid(g,w,h,nx,ny){g.strokeStyle=tok("--grid");g.lineWidth=1;g.beginPath();for(let i=1;i<nx;i++){const x=Math.round(w*i/nx)+.5;g.moveTo(x,0);g.lineTo(x,h)}for(let j=1;j<ny;j++){const y=Math.round(h*j/ny)+.5;g.moveTo(0,y);g.lineTo(w,y)}g.stroke()}
+function speedTrace(cv,s,big){const[g,w,h]=fit(cv);grid(g,w,h,big?12:6,big?4:2);const max=Math.max(25,...s.sp)*1.05,X=t=>t/(N-1)*w,Y=v=>h-4-(v/max)*(h-8);
+ const path=f=>{g.beginPath();for(let t=0;t<N;t++){const y=Y(f(t));t?g.lineTo(X(t),y):g.moveTo(X(t),y)}};
+ // expected band: faint banner with soft edges, follows the explaining factors
+ g.beginPath();for(let t=0;t<N;t++){const y=Y(s.ex[t]+s.bw[t]);t?g.lineTo(X(t),y):g.moveTo(X(t),y)}for(let t=N-1;t>=0;t--)g.lineTo(X(t),Y(Math.max(0,s.ex[t]-s.bw[t])));g.closePath();
+ g.fillStyle=tok("--band-fill");g.fill();g.strokeStyle=tok("--band-edge");g.lineWidth=1;path(t=>s.ex[t]+s.bw[t]);g.stroke();path(t=>Math.max(0,s.ex[t]-s.bw[t]));g.stroke();
+ // the profile alone, dashed, only where the factors moved the band away from it
+ if(s.why.some(Boolean)){g.strokeStyle=tok("--band-edge");g.setLineDash([2,4]);[1,-1].forEach(k=>{g.beginPath();let on=false;for(let t=0;t<N;t++){const y=Y(Math.max(0,s.raw[t]+k*s.B));if(s.why[t]){on?g.lineTo(X(t),y):g.moveTo(X(t),y);on=true}else on=false}g.stroke()});g.setLineDash([])}
+ g.lineWidth=big?1.7:1.4;for(let t=1;t<N;t++){g.strokeStyle=s.unx==null?tok("--dim"):[tok("--trace"),tok("--amber"),tok("--red")][s.st[t]];g.beginPath();g.moveTo(X(t-1),Y(s.sp[t-1]));g.lineTo(X(t),Y(s.sp[t]));g.stroke()}
+ g.fillStyle=tok("--dim");g.font=`10px ${tok("--f-data")}`;g.fillText(Math.round(max)+" kn",3,11);
+ if(big){g.fillText("-6 h",3,h-4);g.fillText("now",w-24,h-4);
+  const t0=s.why.findIndex(Boolean);if(t0>=0){g.fillStyle=tok("--band-edge");g.fillText("band adjusted: "+s.why[t0],Math.min(X(t0)+4,w-150),Y(s.ex[N-1]+s.bw[N-1])-6)}
+  if(s.evt==="drop"){const x=X(313);g.strokeStyle=tok("--red");g.setLineDash([3,3]);g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke();g.setLineDash([]);g.fillStyle=tok("--red");g.fillText("FLAG +7 min",x-74,22)}}}
+function headTrace(cv,s){const[g,w,h]=fit(cv);grid(g,w,h,6,2);const X=t=>t/(N-1)*w,Y=a=>{a=((a%360)+360)%360;return h-3-a/360*(h-6)};g.strokeStyle=s.unx==null?tok("--dim"):tok("--trace");g.lineWidth=1.2;g.beginPath();let p=null;s.hd.forEach((a,t)=>{const y=Y(a);if(p!==null&&Math.abs(y-p)>h*.5)g.moveTo(X(t),y);else t?g.lineTo(X(t),y):g.moveTo(X(t),y);p=y});g.stroke();g.fillStyle=tok("--dim");g.font=`10px ${tok("--f-data")}`;g.fillText("360",3,11)}
+
+let sortKey="unx",sel=0;const board=document.getElementById("board");
+function color(v){return v==null?tok("--dim"):v>.6?tok("--red"):v>.3?tok("--amber"):tok("--ok")}
+function render(){const list=SHIPS.map((s,i)=>({s,i})).sort((a,b)=>sortKey==="name"?a.s.name.localeCompare(b.s.name):((b.s[sortKey]??-1)-(a.s[sortKey]??-1)));
+ board.innerHTML="";list.forEach(({s,i})=>{const v=s[sortKey==="name"?"unx":sortKey];const row=document.createElement("div");row.className="row";row.tabIndex=0;row.setAttribute("role","option");row.setAttribute("aria-selected",i===sel);
+  row.innerHTML=`<div class="delta" style="color:${color(v)}">${v==null?"--":(v*100).toFixed(0)}<small>${sortKey==="unu"?"UNUSUAL":"UNEXPL."}</small></div>
+  <div class="id"><b>${s.name}${s.tag?`<span class="tag" style="color:${s.tag==="REPLAY"?tok("--amber"):tok("--dim")}">${s.tag}</span>`:""}</b><span>${s.cls} · ${s.tier}</span></div>
+  <canvas class="tr sp"></canvas><canvas class="tr hd"></canvas>
+  <div class="fx">${FX.map((f,k)=>{const st=s.fx[k];return `<i class="${st==="ex"?"ex":st==="no"?"no":""}" title="${f}">${f}</i>`}).join("")}</div>`;
+  const pick=()=>{sel=i;render()};row.onclick=pick;row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}};
+  board.appendChild(row);speedTrace(row.querySelector(".sp"),s);headTrace(row.querySelector(".hd"),s)});
+ sheet();scope();}
+
+function silhouette(cv,s){const[g,w,h]=fit(cv);const ink=tok("--ink");g.fillStyle=ink;const L=w*.94,x0=(w-L)/2,wl=h*.78,fb=h*.16;
+ // hull with raked bow and transom
+ g.beginPath();g.moveTo(x0,wl-fb);g.lineTo(x0+L*.97,wl-fb);g.lineTo(x0+L,wl-fb-4);g.lineTo(x0+L*.95,wl+h*.1);g.lineTo(x0+L*.03,wl+h*.1);g.closePath();g.fill();
+ const box=(a,b,top)=>g.fillRect(x0+L*a,wl-fb-top,L*(b-a),top);
+ if(s.kind==="tanker"){box(.03,.17,h*.42);box(.05,.13,h*.52);box(.08,.10,h*.62);g.fillRect(x0+L*.2,wl-fb-5,L*.72,5);for(let k=0;k<6;k++)g.fillRect(x0+L*(.25+k*.11),wl-fb-10,3,10)}
+ if(s.kind==="cargo"||s.kind==="bulk"){box(.03,.15,h*.45);box(.05,.12,h*.55);for(let k=0;k<(s.kind==="bulk"?5:4);k++){g.fillRect(x0+L*(.2+k*.16),wl-fb-h*.12,L*.12,h*.12);if(s.kind==="cargo"){g.fillRect(x0+L*(.29+k*.16),wl-fb-h*.45,3,h*.33)}}box(.93,.98,h*.08)}
+ if(s.kind==="ferry"){box(.04,.92,h*.32);box(.12,.80,h*.44);box(.30,.62,h*.54);g.fillRect(x0+L*.18,wl-fb-h*.62,L*.06,h*.2)}
+ if(s.kind==="tug"){box(.04,.45,h*.2);box(.38,.62,h*.42);box(.45,.55,h*.6)}
+ g.strokeStyle=tok("--ink-2");g.setLineDash([2,3]);g.beginPath();g.moveTo(0,wl+.5);g.lineTo(w,wl+.5);g.stroke();g.setLineDash([])}
+
+function sheet(){const s=SHIPS[sel],el=document.getElementById("sheet");
+ el.innerHTML=`${s.stamp?`<div class="stamp">${s.stamp}</div>`:""}<div class="cls">RECOGNITION SHEET · ${s.cls}</div><h2>${s.name}</h2>
+ <canvas id="sil"></canvas><div class="dims"><span>LOA ${s.len} m</span><span>BEAM ${s.beam} m</span><span>SIDE VIEW · NOT TO SCALE</span></div>
+ <dl class="kv"><dt>PROFILE</dt><dd>${s.tier}</dd><dt>CONFIDENCE</dt><dd>${s.conf}</dd>
+ <dt>UNUSUAL</dt><dd style="color:${s.unu>.6?"#b8281c":"inherit"}">${s.unu==null?"not scored":(s.unu*100).toFixed(0)+" / 100"}</dd>
+ <dt>UNEXPLAINED</dt><dd style="color:${s.unx>.6?"#b8281c":"inherit"};font-weight:700">${s.unx==null?"not scored":(s.unx*100).toFixed(0)+" / 100"}</dd></dl>
+ <div class="cls">SPEED · RECORDED vs EXPECTED · 6 H</div><div class="sig"><canvas id="sig"></canvas></div>
+ <div class="cls" style="margin-bottom:6px">FACTORS CHECKED</div><ul class="facts">${s.facts.map(([k,l,t])=>`<li class="${k}"><b>${l}</b><span>${t}</span></li>`).join("")}</ul>
+ <p class="foot">Sentences are fixed and written by people. The model only picks which one applies. A flag says the sea does not explain the behaviour. It does not say why.</p>`;
+ silhouette(document.getElementById("sil"),s);speedTrace(document.getElementById("sig"),s,true)}
+
+const FI=[[21,61],[21.3,60.6],[22,60.3],[22.6,60.05],[23.3,59.92],[24,60.1],[25,60.2],[26,60.42],[27,60.5],[28,60.55],[28.7,60.7],[29.5,60.25],[30.2,60.0],[31,60.0],[31,61]];
+const EE=[[21,59.0],[23.4,59.2],[24,59.42],[24.8,59.46],[25.6,59.56],[26.5,59.55],[27.5,59.45],[28.1,59.42],[28.7,59.6],[29.5,59.92],[30.2,59.95],[31,59.9],[31,59],[21,59]];
+function scope(){const cv=document.getElementById("scope"),[g,w,h]=fit(cv);const lo=[21,30.6],la=[59.1,60.9];const X=x=>(x-lo[0])/(lo[1]-lo[0])*w,Y=y=>h-(y-la[0])/(la[1]-la[0])*h;
+ grid(g,w,h,10,4);const land=p=>{g.beginPath();p.forEach(([x,y],k)=>k?g.lineTo(X(x),Y(y)):g.moveTo(X(x),Y(y)));g.closePath();g.fillStyle=tok("--screen-2");g.fill();g.strokeStyle=tok("--dim");g.lineWidth=1;g.stroke()};land(FI);land(EE);
+ g.strokeStyle=tok("--amber");g.globalAlpha=.6;g.setLineDash([4,4]);g.beginPath();g.moveTo(X(25.55),Y(60.33));g.lineTo(X(26.9),Y(59.5));g.stroke();g.setLineDash([]);g.globalAlpha=1;
+ g.font=`9px ${tok("--f-data")}`;g.fillStyle=tok("--amber");g.fillText("CABLE",X(26.1),Y(59.98));
+ SHIPS.forEach((s,i)=>{const x=X(s.lon),y=Y(s.lat),c=color(s.unx);g.fillStyle=c;g.strokeStyle=c;if(s.unx==null){g.strokeRect(x-3,y-3,6,6)}else{g.beginPath();g.arc(x,y,3,0,7);g.fill()}
+  const a=(s.hd[N-1]-90)*Math.PI/180;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*12,y+Math.sin(a)*12);g.stroke();
+  if(i===sel){g.strokeStyle=tok("--paper");g.strokeRect(x-8,y-8,16,16);g.fillStyle=tok("--paper");g.fillText(s.name,x+11,y-9)}});
+ g.fillStyle=tok("--dim");g.fillText("HELSINKI",X(24.6),Y(60.3));g.fillText("TALLINN",X(24.4),Y(59.32));g.fillText("21°E",3,h-4);g.fillText("30.6°E",w-38,h-4)}
+
+[["s-unx","unx"],["s-unu","unu"],["s-name","name"]].forEach(([id,k])=>document.getElementById(id).onclick=()=>{sortKey=k;document.querySelectorAll(".keys .key").forEach(b=>b.setAttribute("aria-pressed",b.id===id));render()});
+function tick(){document.getElementById("clock").textContent=new Date().toISOString().slice(11,19)+" UTC"}tick();setInterval(tick,1000);
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(render,120)});
+(document.fonts?.ready||Promise.resolve()).then(render);render();
+</script>
+
+</body></html>

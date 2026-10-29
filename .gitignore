@@ -1,0 +1,18 @@
+# All data: our recording, derived caches, third-party files (see PRIOR_WORK.md)
+data/
+
+# Generated outputs (regenerate from sources)
+lab/*.ipynb
+umbrel/compose.yaml
+
+# Local environment
+.venv/
+.env
+__pycache__/
+*.egg-info/
+.pytest_cache/
+
+# Local tool state
+.claude/
+*.sqlite
+*.db
