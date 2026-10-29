@@ -1,8 +1,8 @@
 # Alibi - AIS recorder
 
-Records the Fintraffic Digitraffic marine AIS feed (`vessels-v2/#` over MQTT/WSS) to disk, untouched. Original spec: [archive/recorder-spec-2026-10-04.md](archive/recorder-spec-2026-10-04.md).
+Records the Fintraffic Digitraffic marine AIS feed (`vessels-v2/#` over MQTT/WSS) to disk, untouched. Original spec: [archive/recorder-spec-2026-10-04.md](../archive/recorder-spec-2026-10-04.md).
 
-The product: [ALIBI-design-brief.md](ALIBI-design-brief.md). How it gets built: [alibi-plan.md](alibi-plan.md). API contract: [alibi-openapi.yaml](alibi-openapi.yaml). What existed before the hackathon: [PRIOR_WORK.md](PRIOR_WORK.md). Superseded documents: `archive/`.
+The product: [ALIBI-design-brief.md](../ALIBI-design-brief.md). How it gets built: [alibi-plan.md](../alibi-plan.md). API contract: [alibi-openapi.yaml](../alibi-openapi.yaml). What existed before the hackathon: [PRIOR_WORK.md](../PRIOR_WORK.md). Superseded documents: `archive/`.
 
 ## Run
 

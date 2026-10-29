@@ -1,0 +1,18 @@
+{
+ "profile_version": "pdb-2026-10-28",
+ "built_at": "2026-10-29T16:29:53Z",
+ "spans": {
+  "dk": [
+   "2024-10-01",
+   "2026-10-26"
+  ],
+  "fi": [
+   "2026-10-05",
+   "2026-10-28"
+  ]
+ },
+ "sources": {
+  "dk": "Danish Maritime Authority AIS archive (aisdata.ais.dk)",
+  "fi": "Fintraffic Digitraffic marine AIS, recorded by ALIBI (CC BY 4.0)"
+ }
+}
