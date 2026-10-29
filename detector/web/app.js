@@ -79,7 +79,8 @@ async function boot() {
   await loadCase(first);
   const sel = (hp.get("sel") || "").toUpperCase();
   const pick = () => {
-    const r = sel && S.rows.find(r => (r.name || "").toUpperCase().includes(sel));
+    const r = sel && S.rows.filter(r => (r.name || "").toUpperCase().includes(sel))
+      .sort((a, b) => (b.X ?? -1) - (a.X ?? -1))[0];  // that ship's least explained event
     if (r) select(r.id);
   };
   pick();
