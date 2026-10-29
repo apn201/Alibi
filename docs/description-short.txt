@@ -1,0 +1,11 @@
+ALIBI (Automatic Lookout for Irregular Baltic Itineraries) is a second opinion for maritime monitoring. An AIS system flags a ship that does something unusual, like slowing down over a cable. ALIBI tests what could explain it: the sea, the place, the ship's own habits and the traffic around it. The unexplained is the short list worth a human's time. The sea is the alibi.
+
+I come from IT security. Dashboards full of false positives stop being read. Antivirus moved from known fingerprints to deviation from normal, and I tried the same at sea.
+
+Copernicus Marine data (Baltic waves, currents, ice and hourly wind) gives the expected speed loss for each ship. I tested the idea first: in calm sea 15 % of merchant ships run clearly below their usual speed, at 14 m/s wind 48 %.
+
+Results: on an ordinary day the demo detector flags about 126 ships, ALIBI leaves about 22. In storms Copernicus takes 10-30 % more off. Eagle S stays unexplained: the sea accounts for 0.1 of its 3.7 knot drop.
+
+ALIBI is an API, not another map. It returns Unusual and Unexplained separately, with evidence per source, and accuses nobody. Profiles come from two years of Danish AIS archive and our own live Finnish recording.
+
+Demo: https://helppox.com/alibi/
