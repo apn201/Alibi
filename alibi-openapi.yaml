@@ -7,11 +7,17 @@ info:
     Accepts a candidate event from an AIS or maritime monitoring client and
     returns a structured assessment of what is unusual, what available evidence
     helps explain it, and what remains unexplained. An unexplained assessment is
-    not a claim of hostile intent. This is an initial hackathon contract; only
-    endpoints implemented by the running prototype should be considered live.
+    not a claim of hostile intent. ALIBI = Automatic Lookout for Irregular Baltic Itineraries.
+    Two entry modes on the same call: event mode (the caller sends an event and
+    its track) and track mode (a track without an event; ALIBI's reference
+    detector finds the event). Every result records the API, model and profile
+    versions and is written to an evidence ledger. This contract is also served
+    at /api/v1/openapi.yaml; Swagger UI at /api/v1/docs.
 servers:
-  - url: https://api.example.invalid/api/v1
-    description: Placeholder; replace with the selected helppox.com or apn201.com deployment URL
+  - url: http://127.0.0.1:8601/api/v1
+    description: Local development (python -m alibi)
+  - url: https://helppox.com/alibi/api/v1
+    description: Hackathon deployment
 paths:
   /health:
     get:
@@ -31,11 +37,34 @@ paths:
                     enum: [ok, degraded]
                   api_version:
                     type: string
+                  model_version:
+                    type: string
+                  profile_version:
+                    type: string
                   dependencies:
                     type: object
+                    description: profiles, ledger, envcache, explainers.
                     additionalProperties:
                       type: string
                       enum: [ok, degraded, unavailable, not_checked]
+  /sources:
+    get:
+      operationId: listSources
+      summary: List the evidence sources and their attribution
+      description: >-
+        Source ids usable in options.enabled_sources. `profile` is the
+        baseline and always on. Kind `behaviour` sources may explain a
+        deviation, `quality` only moves confidence, `identity` is shown and
+        never changes Unusual or Unexplained.
+      responses:
+        '200':
+          description: Source catalogue
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Source'
   /assessments:
     post:
       operationId: createAssessment
@@ -65,7 +94,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AssessmentAccepted'
         '400':
-          description: Invalid request or unsupported units
+          description: Invalid request, unsupported units or unknown source id
           content:
             application/json:
               schema:
@@ -78,6 +107,46 @@ paths:
                 $ref: '#/components/schemas/Error'
         '422':
           description: Request is structurally valid but cannot be assessed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /assessments/batch:
+    post:
+      operationId: createAssessmentBatch
+      summary: Assess several requests under one set of options
+      description: >-
+        For clients that re-run a whole case under new toggles (sources,
+        sensitivity). `options` overrides the given fields of every request's
+        own options. Results come back in request order; a request that
+        cannot be assessed yields a BatchError in its place. With
+        persist false (default) nothing is written to the ledger and
+        audit_reference is null. Body limit 25 MB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchRequest'
+      responses:
+        '200':
+          description: One item per request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/Assessment'
+                    - $ref: '#/components/schemas/BatchError'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Request payload exceeds configured limit
           content:
             application/json:
               schema:
@@ -176,7 +245,7 @@ components:
           minimum: -180
           maximum: 180
         sog_knots:
-          type: number
+          type: [number, 'null']
           minimum: 0
           description: Speed over ground in knots.
         cog_degrees:
@@ -219,7 +288,11 @@ components:
           minimum: 0
           maximum: 1
           default: 0.5
-          description: Prototype sensitivity setting; precise semantics must be documented by implementation.
+          description: >-
+            Sensitivity s. An assessment is in the top band when Unexplained
+            >= 0.75 - 0.5 s. In track mode s also sets the reference detector's
+            thresholds (s = 0 conservative x0.7 rule only, s = 1 adds the
+            4 sigma + 10 % rule and shorter windows).
         enabled_sources:
           type: array
           items:
@@ -228,6 +301,27 @@ components:
         include_evidence:
           type: boolean
           default: true
+          description: When false, findings carry no details.
+        include_signature:
+          type: boolean
+          default: true
+          description: When false, the signature trace is omitted.
+    BatchRequest:
+      type: object
+      required: [requests]
+      properties:
+        requests:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            $ref: '#/components/schemas/AssessmentRequest'
+        options:
+          $ref: '#/components/schemas/AssessmentOptions'
+        persist:
+          type: boolean
+          default: false
+          description: Record each result in the ledger.
     AssessmentAccepted:
       type: object
       required: [assessment_id, status]
@@ -248,6 +342,11 @@ components:
         assessed_at:
           type: string
           format: date-time
+        headline:
+          type: string
+          description: >-
+            One fixed sentence. The top band reads "Behaving unusually, and the
+            available evidence does not explain it."
         event:
           $ref: '#/components/schemas/CandidateEvent'
         measures:
@@ -255,15 +354,27 @@ components:
           required: [unusual, unexplained]
           properties:
             unusual:
-              type: number
+              type: [number, 'null']
               minimum: 0
               maximum: 1
-              description: Deviation from the configured baseline; not a threat score.
+              description: >-
+                Deviation from the ship's expected speed (blend of own profile,
+                class prototype and this journey); not a threat score. Null for
+                working vessels (tug, pilot, SAR, pleasure, fishing, service),
+                which are not scored.
             unexplained:
-              type: number
+              type: [number, 'null']
               minimum: 0
               maximum: 1
-              description: Portion of the deviation not accounted for by evidence available to this run.
+              description: >-
+                Unusual x product over enabled behaviour sources of (1 - explains).
+                Always <= unusual. Identity and quality sources never change it.
+            band:
+              type: string
+              enum: [top, lower, not_scored]
+            top_threshold:
+              type: number
+              description: 0.75 - 0.5 x sensitivity.
         confidence:
           type: object
           required: [level, reasons]
@@ -286,8 +397,22 @@ components:
               status:
                 type: string
                 enum: [supports_explanation, weakens_explanation, neutral, unavailable, identity_context_only]
+                description: >-
+                  supports_explanation when explains >= 0.2; weakens_explanation when
+                  the source was checked and points the other way (e.g. the fleet
+                  kept its speed); unavailable when there is no data (lowers
+                  confidence, never raises anything).
               summary:
                 type: string
+                description: One fixed, human-written sentence with numbers filled in.
+              explains:
+                type: [number, 'null']
+                minimum: 0
+                maximum: 1
+                description: Share of the deviation this source accounts for (behaviour sources); null for identity.
+              lamp:
+                type: [string, 'null']
+                enum: [WX, ICE, PLC, GNSS, TRF, null]
               observed_at:
                 type: string
                 format: date-time
@@ -307,6 +432,8 @@ components:
               type: string
               enum: [upstream, reference_detector]
               description: Whether the event came from the caller or from the service's own detector (track mode).
+            api_version:
+              type: string
             sensitivity:
               type: number
               minimum: 0
@@ -322,8 +449,120 @@ components:
           items:
             type: string
         audit_reference:
-          type: string
+          type: [string, 'null']
           description: Reference to the recorded input/configuration/evidence ledger, if enabled.
+        vessel:
+          type: object
+          properties:
+            vessel_key:
+              type: [string, 'null']
+              description: IMO<n> when the ship has an IMO number, else MMSI<n>.
+            mmsi:
+              type: [integer, 'null']
+            imo:
+              type: [integer, 'null']
+            name:
+              type: [string, 'null']
+            cls:
+              type: [string, 'null']
+              description: Prototype class, type group / length class, e.g. cargo/L.
+            profile_tier:
+              type: string
+              enum: [own, prototype, journey, working]
+              description: Which profile dominates the expected speed; working = not scored.
+        lamps:
+          type: object
+          description: >-
+            One state per evidence lamp: WX sea_state, ICE ice, PLC place / own_habit /
+            notices, GNSS position_quality, TRF fleet. For GNSS, not_explained means
+            position-quality problems were found (confidence lowered).
+          properties:
+            WX: {$ref: '#/components/schemas/LampState'}
+            ICE: {$ref: '#/components/schemas/LampState'}
+            PLC: {$ref: '#/components/schemas/LampState'}
+            GNSS: {$ref: '#/components/schemas/LampState'}
+            TRF: {$ref: '#/components/schemas/LampState'}
+        signature:
+          $ref: '#/components/schemas/Signature'
+        details:
+          type: object
+          additionalProperties: true
+          description: >-
+            unusual (expected, observed, sigma, blend weights), coverage, and in
+            track mode the detector used and other_events found in the track.
+    LampState:
+      type: string
+      enum: [explains, not_explained, neutral, unavailable]
+    Signature:
+      type: object
+      description: >-
+        Trace for the GUI over 1-minute steps of the submitted track; all arrays
+        have equal length. Speeds in knots; band values are half-widths.
+      required: [t, observed_kn, expected_profile_kn, band_profile_kn, expected_adjusted_kn, band_adjusted_kn, state, event_start, event_end]
+      properties:
+        t:
+          type: array
+          items: {type: string, format: date-time}
+        observed_kn:
+          type: array
+          items: {type: [number, 'null']}
+        expected_profile_kn:
+          type: array
+          items: {type: [number, 'null']}
+        band_profile_kn:
+          type: array
+          items: {type: [number, 'null']}
+        expected_adjusted_kn:
+          type: array
+          description: Profile expectation plus every enabled explainer's expected change.
+          items: {type: [number, 'null']}
+        band_adjusted_kn:
+          type: array
+          items: {type: [number, 'null']}
+        state:
+          type: array
+          description: >-
+            0 inside the profile band, 1 outside it but inside the adjusted band
+            (unusual, explained), 2 outside the adjusted band (unexplained).
+          items: {type: [integer, 'null'], enum: [0, 1, 2, null]}
+        event_start:
+          type: string
+          format: date-time
+        event_end:
+          type: string
+          format: date-time
+    Source:
+      type: object
+      required: [id, title, kind, attribution]
+      properties:
+        id:
+          type: string
+          enum: [profile, sea_state, ice, own_habit, place, fleet, notices, position_quality, identity]
+        title:
+          type: string
+        kind:
+          type: string
+          enum: [behaviour, quality, identity]
+        lamp:
+          type: [string, 'null']
+        attribution:
+          type: string
+        available:
+          type: boolean
+          description: False when the source's module is not built into this deployment.
+    BatchError:
+      type: object
+      required: [index, error, message]
+      properties:
+        index:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: [object, 'null']
+          additionalProperties: true
     Error:
       type: object
       required: [error, message]
