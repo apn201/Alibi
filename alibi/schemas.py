@@ -69,7 +69,7 @@ class AssessmentRequest(_In):
 
 
 class BatchRequest(_In):
-    requests: list[AssessmentRequest] = Field(min_length=1, max_length=200)
+    requests: list[AssessmentRequest] = Field(min_length=1, max_length=600)
     options: AssessmentOptions | None = Field(default=None, description="Overrides the options of every request "
                                               "(only the fields given here).")
     persist: bool = Field(default=False, description="Record each result in the ledger.")
