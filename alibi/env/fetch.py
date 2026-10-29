@@ -49,7 +49,12 @@ CASES = {  # name -> (region, start, end) UTC days inclusive
 
 
 def default_root() -> Path:
-    return Path(os.environ.get("ALIBI_ENVCACHE") or Path(__file__).resolve().parents[2] / "data" / "envcache")
+    """$ALIBI_ENVCACHE, else data/envcache, else the committed snapshot/envcache (a server that only did git clone)."""
+    if os.environ.get("ALIBI_ENVCACHE"):
+        return Path(os.environ["ALIBI_ENVCACHE"])
+    repo = Path(__file__).resolve().parents[2]
+    live = repo / "data" / "envcache"
+    return live if live.exists() else repo / "snapshot" / "envcache"
 
 
 def credentials_present() -> bool:
@@ -100,7 +105,7 @@ def split_to_days(ds, dataset: str, region: str, root: Path) -> list[Path]:
     return written
 
 
-def fetch(dataset: str, region: str, start: str, end: str, root: Path | None = None) -> dict:
+def fetch(dataset: str, region: str, start: str, end: str, root: Path | None = None, refresh_from: dt.date | None = None) -> dict:
     """Fetch UTC days start..end (inclusive) of one dataset for one region into the cache."""
     import copernicusmarine as cm
     import xarray as xr
@@ -113,7 +118,7 @@ def fetch(dataset: str, region: str, start: str, end: str, root: Path | None = N
     for d in _days(start, end):
         if str(d) < lo or (hi and str(d) > hi):
             stats["out_of_range"] += 1
-        elif day_path(root, dataset, region, d).exists():
+        elif day_path(root, dataset, region, d).exists() and not (refresh_from and d >= refresh_from):
             stats["skipped"] += 1
         else:
             todo.append(d)
@@ -145,3 +150,16 @@ def fetch_span(region: str, start: str, end: str, root: Path | None = None, pad_
     s = str(pd.Timestamp(start).date() - dt.timedelta(days=pad_days))
     e = str(pd.Timestamp(end).date() + dt.timedelta(days=pad_days))
     return [fetch(ds, region, s, e, root) for ds in (WAVE, PHY, WIND_NRT, WIND_MY)]
+
+
+def fetch_recent(n_days: int, root: Path | None = None, forecast_days: int = 5) -> list[dict]:
+    """Last n_days up to today plus the forecast (waves, physics) for both regions; yesterday and today are re-fetched
+    because their files were partial when last written. For a nightly or hourly job."""
+    today = dt.datetime.now(dt.timezone.utc).date()
+    start = str(today - dt.timedelta(days=n_days))
+    out = []
+    for region in REGIONS:
+        for ds in (WAVE, PHY, WIND_NRT):
+            end = today + dt.timedelta(days=forecast_days if ds != WIND_NRT else 0)
+            out.append(fetch(ds, region, start, str(end), root, refresh_from=today - dt.timedelta(days=1)))
+    return out
