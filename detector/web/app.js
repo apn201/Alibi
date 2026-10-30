@@ -403,7 +403,8 @@ function fillRow(el, r, t, quiet) {
   const tier = r.work ? "working" : (r.tier || "");
   const tierTxt = { own: "OWN", prototype: "PROTOTYPE", journey: "JOURNEY", working: "WORK" }[tier] || (tier ? tier.toUpperCase() : "");
   const conf = r.a && r.a.confidence ? " · CONF " + String(r.a.confidence.level).toUpperCase() : "";
-  el.querySelector(".id").innerHTML = '<b title="' + esc(r.name) + '">' + esc(r.name) + "</b><span>" + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
+  const at = r.req.event && r.req.event.start_time ? fmtT(r.req.event.start_time, true) : "";
+  el.querySelector(".id").innerHTML = '<b title="' + esc(r.name) + '">' + esc(r.name) + (at ? ' <small class="at">' + esc(at) + "</small>" : "") + "</b><span>" + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
     esc(clsText(r.cls)) + conf + (r.err ? " · ERROR" : "") + "</span>";
   const lamps = (r.a && r.a.lamps) || {};
   el.querySelector(".fx").innerHTML = FX.map(f => {
@@ -542,6 +543,7 @@ function renderSheet() {
   const el = $("sheet"), r = S.rows.find(x => x.id === S.sel);
   if (!r) { el.innerHTML = '<p class="foot">Select a row to open its recognition sheet.</p>'; return; }
   const a = r.a || {}, conf = a.confidence || {}, cfg = a.configuration || {}, ev = a.event || r.req.event || {}, v = a.vessel || {};
+  const also = ((r.req.event && r.req.event.baseline_summary) || {}).also || [];
   const findings = a.findings || [];
   const isId = f => f.status === "identity_context_only" || f.source_id === "identity";
   const beh = findings.filter(f => !isId(f)), ids = findings.filter(isId);
@@ -562,6 +564,7 @@ function renderSheet() {
     '<dl class="kv"><dt>PROFILE</dt><dd>' + esc(TIER_TXT[r.tier] || (r.tier || "--").toUpperCase()) + "</dd>" +
     "<dt>CONFIDENCE</dt><dd>" + esc(String(conf.level || "--").toUpperCase()) + "</dd>" +
     "<dt>EVENT</dt><dd>" + esc((ev.event_type || "--").toUpperCase()) + " · " + esc(fmtT(ev.start_time)) + "–" + esc(fmtT(ev.end_time, true)) + "</dd>" +
+    (also.length ? "<dt>SAME EPISODE</dt><dd>" + also.map(o => esc(String(o.event_type).toUpperCase()) + " · " + esc(fmtT(o.start_time, true))).join("<br>") + "</dd>" : "") +
     (pos ? "<dt>POSITION</dt><dd>" + (+pos.latitude).toFixed(3) + "° N " + (+pos.longitude).toFixed(3) + "° E</dd>" : "") + "</dl>" +
     (conf.reasons && conf.reasons.length ? '<ul class="reasons">' + conf.reasons.map(x => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
     '<div class="measures"><div class="measure' + (hotU ? " hot" : "") + '"><span>UNUSUAL</span><b>' + (r.U == null ? "--" : pct(r.U) + "<small> / 100</small>") + "</b><em>deviation from the expected band</em></div>" +

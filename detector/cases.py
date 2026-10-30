@@ -221,10 +221,32 @@ def fleet_candidates(tracks: pd.DataFrame, outages, lo: float, hi: float) -> lis
     for mmsi, g in tracks.groupby("mmsi", sort=False):
         if len(g) < 30:
             continue
-        for e in rules.detect_tiers(g, mmsi=int(mmsi), outages=outages or None, stops=stops):
-            if lo <= rules._core._t(e["start_time"]) < hi:
-                found.append((e, int(mmsi)))
+        evs = [e for e in rules.detect_tiers(g, mmsi=int(mmsi), outages=outages or None, stops=stops)
+               if lo <= rules._core._t(e["start_time"]) < hi]
+        found += [(e, int(mmsi)) for e in merge_overlaps(evs)]
     return found
+
+
+def merge_overlaps(evs: list[dict]) -> list[dict]:
+    """One ship, one episode, one candidate: of events that overlap in time (a slowdown inside a corridor
+    loiter, say) keep the most significant; the others are listed in its baseline_summary["also"]."""
+    t = rules._core._t
+    groups: list[list[dict]] = []
+    for e in sorted(evs, key=lambda e: t(e["start_time"])):
+        if groups and t(e["start_time"]) <= max(t(o["end_time"]) for o in groups[-1]):
+            groups[-1].append(e)
+        else:
+            groups.append([e])
+    out = []
+    for grp in groups:
+        keep = max(grp, key=significance)
+        others = [o for o in grp if o is not keep]
+        if others:
+            keep["baseline_summary"]["also"] = [{"event_type": o["event_type"], "start_time": o["start_time"],
+                                                 "end_time": o["end_time"]} for o in others]
+            keep["baseline_summary"]["min_tier"] = min(o["baseline_summary"].get("min_tier", 2) for o in grp)
+        out.append(keep)
+    return out
 
 
 def build_request(frame: pd.DataFrame, e: dict, meta: dict) -> dict:
