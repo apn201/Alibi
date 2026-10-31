@@ -6,6 +6,8 @@ The sea is the alibi.
 
 Built for the Copernicus Marine Service Hackathon 2026, challenge Enhancing Maritime Security and Resilience. Solo entry. Why I built it: [docs/submission.md](docs/submission.md).
 
+Result: one of 15 finalists out of 40 teams, with a live Q&A with the jury. Not in the top 3.
+
 Demo: https://helppox.com/alibi/ | API: https://helppox.com/alibi/api/v1/docs
 
 ## What it is
