@@ -268,7 +268,18 @@ async function sampleAssess(opts) {
   });
 }
 
-function topCount(s) { const t = th(s); return S.rows.filter(r => r.X != null && r.X >= t).length; }
+/* The board is one row per ship. A ship with several events is shown by its lead event: the highest on the
+   current sort key (least explained by default). Every event is still scored; the sheet lists the others. */
+const shipOf = r => String((r.req.event && r.req.event.vessel_id) || (r.req.metadata && r.req.metadata.mmsi) || r.name);
+function shipRows() {
+  const val = r => S.sortKey === "unu" ? r.U : r.X, by = new Map();
+  S.rows.forEach(r => { const k = shipOf(r); by.has(k) ? by.get(k).push(r) : by.set(k, [r]); });
+  return [...by.values()].map(g => {
+    const lead = g.slice().sort((a, b) => (val(b) ?? -1) - (val(a) ?? -1) || Date.parse(a.req.event.start_time) - Date.parse(b.req.event.start_time))[0];
+    lead.events = g; return lead;
+  });
+}
+function topCount(s) { const t = th(s); return new Set(S.rows.filter(r => r.X != null && r.X >= t).map(shipOf)).size; }
 function describe(w) {
   if (w.kind === "load") return "RUN · " + S.enabled.size + " OF " + S.sources.length + " SOURCES ON";
   if (w.kind === "src") return "WITH " + srcLabel(w.id) + (w.on ? " ON" : " OFF");
@@ -304,14 +315,15 @@ function setStrip(o) {
 }
 function updateSub() {
   const scored = S.rows.filter(r => r.X != null).length, work = S.rows.filter(r => r.work).length;
-  $("strip-sub").textContent = S.rows.length + " candidates → " + topCount() + " in the top band" + (work ? " · " + work + " working, not scored" : "") + (scored < S.rows.length - work ? " · " + (S.rows.length - work - scored) + " not assessed" : "");
+  const ships = new Set(S.rows.map(shipOf)).size;
+  $("strip-sub").textContent = S.rows.length + " candidates on " + ships + " ships → " + topCount() + " ships in the top band" + (work ? " · " + work + " working, not scored" : "") + (scored < S.rows.length - work ? " · " + (S.rows.length - work - scored) + " not assessed" : "");
   $("sens-th").textContent = th().toFixed(2);
 }
 
 /* ---------- board ---------- */
 function sortedRows() {
   const k = S.sortKey, val = r => k === "unu" ? r.U : r.X;
-  return S.rows.slice().sort((a, b) => {
+  return shipRows().sort((a, b) => {
     if (k === "name") return a.name.localeCompare(b.name);
     const va = val(a), vb = val(b);
     if (va == null && vb == null) return a.name.localeCompare(b.name);
@@ -334,8 +346,8 @@ function renderBoard(animate) {
   const nTop = list.filter(r => r.X != null && r.X >= t).length;
   if (byX && nTop) { const c = document.createElement("div"); c.className = "caption"; c.textContent = "BEHAVING UNUSUALLY, AND THE AVAILABLE EVIDENCE DOES NOT EXPLAIN IT"; frag.appendChild(c); }
   list.forEach((r, k) => {
-    let el = S.rowEls.get(r.id);
-    if (!el) { el = makeRow(r); S.rowEls.set(r.id, el); }
+    let el = S.rowEls.get(shipOf(r));
+    if (!el) { el = makeRow(r); S.rowEls.set(shipOf(r), el); }
     fillRow(el, r, t);
     frag.appendChild(el);
     if (byX && k === nTop - 1) {
@@ -345,10 +357,10 @@ function renderBoard(animate) {
   });
   if (byX && !nTop) { const c = document.createElement("div"); c.className = "cut"; c.textContent = "NOTHING IN THE TOP BAND · UNEXPLAINED ≥ " + pct(t); frag.insertBefore(c, frag.firstChild); }
   board.innerHTML = ""; board.appendChild(frag);
-  list.forEach(r => { const el = S.rowEls.get(r.id); drawRow(el, r); });
+  list.forEach(r => { const el = S.rowEls.get(shipOf(r)); drawRow(el, r); });
   if (animate && !reduced()) {
     list.forEach(r => {
-      const el = S.rowEls.get(r.id), y0 = first.get(r.id);
+      const el = S.rowEls.get(shipOf(r)), y0 = first.get(shipOf(r));
       if (y0 == null) return;
       const dy = y0 - el.getBoundingClientRect().top;
       if (Math.abs(dy) < 2) return;
@@ -364,12 +376,12 @@ function renderBoard(animate) {
 
 function makeRow(r) {
   const el = document.createElement("div");
-  el.className = "row"; el.tabIndex = -1; el.setAttribute("role", "option"); el.dataset.id = r.id;
+  el.className = "row"; el.tabIndex = -1; el.setAttribute("role", "option"); el.dataset.id = r.id; el.dataset.ship = shipOf(r);
   el.innerHTML = '<div class="delta"></div><div class="id"></div><canvas class="tr sp" aria-hidden="true"></canvas><canvas class="tr hd" aria-hidden="true"></canvas><div class="fx"></div>';
-  el.addEventListener("click", () => { select(r.id, false); if (innerWidth <= 1100) $("sheet").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); });
+  el.addEventListener("click", () => { select(el.dataset.id, false); if (innerWidth <= 1100) $("sheet").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); });
   el.addEventListener("keydown", e => {
     const rows = [...document.querySelectorAll("#board .row")], k = rows.indexOf(el);
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(r.id, false); }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(el.dataset.id, false); }
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault(); const n = rows[Math.max(0, Math.min(rows.length - 1, k + (e.key === "ArrowDown" ? 1 : -1)))];
       if (n) select(n.dataset.id, true);
@@ -381,8 +393,10 @@ function makeRow(r) {
 function fillRow(el, r, t, quiet) {
   const isTop = r.X != null && r.X >= t;
   el.classList.toggle("top", isTop); el.classList.toggle("work", !!r.work);
-  el.setAttribute("aria-selected", String(r.id === S.sel));
-  el.tabIndex = r.id === S.sel ? 0 : -1;
+  el.dataset.id = r.id;
+  const on = selShip() === shipOf(r);
+  el.setAttribute("aria-selected", String(on));
+  el.tabIndex = on ? 0 : -1;
   const v = S.sortKey === "unu" ? r.U : r.X;
   const pv = S.sortKey === "unu" ? undefined : r.prevX;
   const changed = pv != null && v != null && Math.abs(pv - v) >= 0.005;
@@ -404,7 +418,9 @@ function fillRow(el, r, t, quiet) {
   const tierTxt = { own: "OWN", prototype: "PROTOTYPE", journey: "JOURNEY", working: "WORK" }[tier] || (tier ? tier.toUpperCase() : "");
   const conf = r.a && r.a.confidence ? " · CONF " + String(r.a.confidence.level).toUpperCase() : "";
   const at = r.req.event && r.req.event.start_time ? fmtT(r.req.event.start_time, true) : "";
-  el.querySelector(".id").innerHTML = '<b title="' + esc(r.name) + '">' + esc(r.name) + (at ? ' <small class="at">' + esc(at) + "</small>" : "") + "</b><span>" + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
+  const n = (r.events || []).length;
+  el.querySelector(".id").innerHTML = '<b title="' + esc(r.name) + (n > 1 ? " · " + n + " events, showing the " + (S.sortKey === "unu" ? "most unusual" : "least explained") : "") + '">' + esc(r.name) +
+    (at ? ' <small class="at">' + esc(at) + (n > 1 ? " · ×" + n : "") + "</small>" : "") + "</b><span>" + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
     esc(clsText(r.cls)) + conf + (r.err ? " · ERROR" : "") + "</span>";
   const lamps = (r.a && r.a.lamps) || {};
   el.querySelector(".fx").innerHTML = FX.map(f => {
@@ -425,9 +441,11 @@ function drawRow(el, r) {
   speedTrace(el.querySelector(".sp"), g, { work: r.work });
   headTrace(el.querySelector(".hd"), r, g, r.work);
 }
+function selShip() { const r = S.rows.find(x => x.id === S.sel); return r ? shipOf(r) : null; }
 function select(id, focus) {
   S.sel = id;
-  document.querySelectorAll("#board .row").forEach(el => { const on = el.dataset.id === id; el.setAttribute("aria-selected", String(on)); el.tabIndex = on ? 0 : -1; if (on && focus) el.focus(); });
+  const ship = selShip();
+  document.querySelectorAll("#board .row").forEach(el => { const on = el.dataset.ship === ship; el.setAttribute("aria-selected", String(on)); el.tabIndex = on ? 0 : -1; if (on && focus) el.focus(); });
   renderSheet(); scope();
 }
 function clsText(c) { if (!c) return "CLASS UNKNOWN"; const [g, s] = String(c).split("/"); return (g || "").toUpperCase() + (s ? " · " + s.toUpperCase() : ""); }
@@ -544,6 +562,7 @@ function renderSheet() {
   if (!r) { el.innerHTML = '<p class="foot">Select a row to open its recognition sheet.</p>'; return; }
   const a = r.a || {}, conf = a.confidence || {}, cfg = a.configuration || {}, ev = a.event || r.req.event || {}, v = a.vessel || {};
   const also = ((r.req.event && r.req.event.baseline_summary) || {}).also || [];
+  const others = S.rows.filter(o => o !== r && shipOf(o) === shipOf(r)).sort((a, b) => Date.parse(a.req.event.start_time) - Date.parse(b.req.event.start_time));
   const findings = a.findings || [];
   const isId = f => f.status === "identity_context_only" || f.source_id === "identity";
   const beh = findings.filter(f => !isId(f)), ids = findings.filter(isId);
@@ -565,6 +584,8 @@ function renderSheet() {
     "<dt>CONFIDENCE</dt><dd>" + esc(String(conf.level || "--").toUpperCase()) + "</dd>" +
     "<dt>EVENT</dt><dd>" + esc((ev.event_type || "--").toUpperCase()) + " · " + esc(fmtT(ev.start_time)) + "–" + esc(fmtT(ev.end_time, true)) + "</dd>" +
     (also.length ? "<dt>SAME EPISODE</dt><dd>" + also.map(o => esc(String(o.event_type).toUpperCase()) + " · " + esc(fmtT(o.start_time, true))).join("<br>") + "</dd>" : "") +
+    (others.length ? "<dt>OTHER EVENTS</dt><dd>" + others.map(o => '<button type="button" class="evlink" data-ev="' + esc(o.id) + '">' +
+      esc(String(o.req.event.event_type).toUpperCase()) + " · " + esc(fmtT(o.req.event.start_time, true)) + " · UNEXPL. " + (o.work ? "--" : pct(o.X)) + "</button>").join("<br>") + "</dd>" : "") +
     (pos ? "<dt>POSITION</dt><dd>" + (+pos.latitude).toFixed(3) + "° N " + (+pos.longitude).toFixed(3) + "° E</dd>" : "") + "</dl>" +
     (conf.reasons && conf.reasons.length ? '<ul class="reasons">' + conf.reasons.map(x => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
     '<div class="measures"><div class="measure' + (hotU ? " hot" : "") + '"><span>UNUSUAL</span><b>' + (r.U == null ? "--" : pct(r.U) + "<small> / 100</small>") + "</b><em>deviation from the expected band</em></div>" +
@@ -585,6 +606,7 @@ function renderSheet() {
     ((a.limitations || []).length ? '<div class="cls">LIMITATIONS</div><ul>' + a.limitations.map(x => "<li>" + esc(x) + "</li>").join("") + "</ul>" : "") +
     '<div class="keys"><button class="key" type="button" id="copy-json">COPY JSON</button><button class="key" type="button" id="dl-json">DOWNLOAD JSON</button></div></details>' +
     '<p class="foot">Sentences are fixed and written by people. The model only picks which one applies. A flag says the sea does not explain the behaviour. It does not say why.</p>';
+  el.querySelectorAll(".evlink").forEach(b => b.onclick = () => select(b.dataset.ev, false));
   silhouette($("sil"), kindOf(r.cls));
   speedTrace($("sig"), sigOf(r), { big: true, work: r.work });
   const raw = () => JSON.stringify(r.a || { error: r.err || "not assessed", request_event: r.req.event }, null, 2);
@@ -650,7 +672,7 @@ function scope() {
   }
   g.fillStyle = tok("--dim"); R.labels.forEach(([t, x, y]) => g.fillText(t, X(x), Y(y)));
   const selRow = S.rows.find(r => r.id === S.sel);
-  S.rows.slice().sort((a, b) => (a.X ?? -1) - (b.X ?? -1)).forEach(r => {
+  shipRows().sort((a, b) => (a.X ?? -1) - (b.X ?? -1)).forEach(r => {
     const p = rowPos(r); if (!p) return;
     const x = X(p[0]), y = Y(p[1]), c = xColor(r.X);
     g.fillStyle = c; g.strokeStyle = c; g.lineWidth = 1;
