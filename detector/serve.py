@@ -1,4 +1,4 @@
-"""Static server for the demo: detector/web/ at /, case files under /cases/.
+"""Static server for the demo: detector/web/ at /, case files and rules/corridors.geojson under /cases/.
 
 Cases come from data/cases/ (built on this machine, and the live case) and from snapshot/cases/
 (committed to the repo), data/ first. /cases/index.json is the union of both indexes, so a server
@@ -42,6 +42,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = path.split("?", 1)[0].split("#", 1)[0]
         if path.startswith("/cases/"):
             name = Path(path[len("/cases/"):]).name  # file name only: no directory traversal
+            if name == "corridors.geojson":  # the detector's own corridor file, drawn on the chart scope
+                return str(ROOT / "rules" / name)
             return str(CASES / name if (CASES / name).exists() else SNAPSHOT_CASES / name)
         return super().translate_path(path)
 
