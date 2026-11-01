@@ -23,6 +23,7 @@ else. Processes, all bound to 127.0.0.1:
 | `alibi-api.service` | ALIBI assessment API (FastAPI/uvicorn), `python -m alibi` | 8601 |
 | `alibi-gui.service` | GUI and replay cases, `python -m detector serve` | 8600 |
 | `alibi-recorder.service` | records live AIS from Fintraffic Digitraffic (public MQTT, outbound wss to meri.digitraffic.fi:443) | none |
+| `alibi-context.service` | records hourly context from Digitraffic (navigational warnings, winter navigation, port visits, restriction areas; outbound HTTPS to meri.digitraffic.fi) for the notices and place explainers | none |
 | `alibi-live.service` | builds the live Gulf of Finland case every 10 min from the recording | none |
 | `alibi-warm.service` | runs the replay cases through the API once after start, so the GUI is fast | none |
 | `alibi-update.service` + `.timer` | daily 06:00: `git pull`, pip install, delete raw AIS older than 3 days, restart | none |
@@ -55,7 +56,7 @@ Apache keeps HTTPS and reverse-proxies `/alibi/api/` to 8601 and `/alibi/` to 86
    Both must return JSON. Stop the test process.
 6. Copy the unit and timer files from `deploy/` to `/etc/systemd/system/` (read each one first; they use
    `/opt/alibi/app` and `/opt/alibi/venv`), `daemon-reload`, then enable and start `alibi-api`,
-   `alibi-gui`, `alibi-recorder`, `alibi-live`, `alibi-warm` (a one-off warm-up, takes a few minutes) and the timer `alibi-update.timer`. Check `systemctl status`
+   `alibi-gui`, `alibi-recorder`, `alibi-context`, `alibi-live`, `alibi-warm` (a one-off warm-up, takes a few minutes) and the timer `alibi-update.timer`. Check `systemctl status`
    for each. The recorder needs outbound HTTPS/WSS; if the firewall blocks outbound traffic, tell me
    instead of opening anything. Do not enable `alibi-copernicus.timer` yet (step 8).
 7. Enable any missing Apache modules among `proxy proxy_http headers`. Put the contents of

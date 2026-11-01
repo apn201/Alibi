@@ -6,7 +6,9 @@ hand-made demo layer, not a cable register (see that file's comment and docs/det
 
 A ship is "in" a corridor while it is within the buffer, ignoring holes of up to 5 min and
 the 5 km around each end of a line (harbour approaches at the landings, where berthing is
-normal). The visit is flagged when it lasts at least 30 / 20 / 12 min (tier 0 / 1 / 2) and either
+normal), and ignoring anything inside the Finnish archipelago (north of ARCHIPELAGO_EDGE):
+there ships slow and turn for pilotage, fairway bends and berths, and the schematic lines say
+nothing useful about where a cable runs between the islands. The visit is flagged when it lasts at least 30 / 20 / 12 min (tier 0 / 1 / 2) and either
   slow        median speed < 4 kn, or
   loitering   the path is curled: net displacement < half the distance sailed.
 Tiers 0-1 skip visits inside learnt stop areas (berths, anchorages; see rules._core.learn_stop_areas).
@@ -25,6 +27,16 @@ from ._core import Grid, cell, dist_to_polyline_km, event, iso, runs, to_xy
 
 LANDING_KM = 5.0
 MIN_MIN = {0: 30, 1: 20, 2: 12}
+# Outer edge of the Finnish archipelago, Hanko to Virolahti, as (lon, lat): hand-made and schematic,
+# drawn just outside the outermost islands (Porkkala, Harmaja, Söderskär, Pellinki, Ulko-Tammio).
+ARCHIPELAGO_EDGE = [(22.8, 59.78), (23.5, 59.86), (24.0, 59.93), (24.4, 59.97), (24.8, 60.06), (25.0, 60.08),
+                    (25.4, 60.10), (25.9, 60.18), (26.3, 60.27), (27.0, 60.33), (27.5, 60.37), (28.5, 60.45),
+                    (29.5, 60.15)]
+
+
+def in_archipelago(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
+    lo, la = map(np.array, zip(*ARCHIPELAGO_EDGE))
+    return (lon >= lo[0]) & (lon <= lo[-1]) & (lat > np.interp(lon, lo, la))
 
 
 @lru_cache(maxsize=1)
@@ -38,11 +50,12 @@ def corridor_loiter(g: Grid, tier: int, mmsi=None, stops=None) -> list[dict]:
     if not valid.any():
         return []
     px, py = to_xy(g.lat, g.lon)
+    sea = ~in_archipelago(g.lat, g.lon)
     out = []
     for c in corridors():
         d = np.full(len(g), np.inf)
         d[valid] = dist_to_polyline_km(g.lat[valid], g.lon[valid], c["line"])
-        inside = d <= c["uncertainty_km"]
+        inside = (d <= c["uncertainty_km"]) & sea
         for end_lon, end_lat in (c["line"][0], c["line"][-1]):  # harbour approaches at the landings
             ex, ey = to_xy(end_lat, end_lon)
             inside &= ~(np.hypot(px - ex, py - ey) <= LANDING_KM)

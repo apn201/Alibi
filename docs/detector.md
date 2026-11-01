@@ -71,7 +71,9 @@ telecom cable, C-Lion1 (Gulf of Finland part) and the Helsinki-Tallinn telecom c
 (3-4 km) used as the buffer half-width and a source note. **They are approximate and schematic**, not a cable register and not
 for navigation. One honest caveat: the middle vertex of Estlink 2 was placed at the crossing position published in the Eagle S
 technical report, so the Eagle S case is not an independent test of the corridor geometry. The 5 km around each line end are
-ignored (harbour approaches).
+ignored (harbour approaches), and so is everything inside the Finnish archipelago, north of a hand-drawn outer edge
+(`ARCHIPELAGO_EDGE` in `rules/corridor.py`): ships slow and turn there for pilotage and berths, and the C-Lion1 line runs past
+Helsinki's harbours. Before this, 66 of 99 corridor events in the Finnish cases were ferries at West Harbour and Katajanokka.
 
 ## Event ids and vocabulary
 

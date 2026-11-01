@@ -1,0 +1,25 @@
+[Unit]
+Description=ALIBI context recorder (Digitraffic navigational warnings, winter navigation, port visits, ATON faults, restriction areas, fairways)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=alibi
+Group=alibi
+WorkingDirectory=/opt/alibi/app
+Environment=PYTHONUTF8=1
+# Same folder the API's notices and place explainers read. Snapshots are named by time, so they sit
+# beside the committed ones from the Umbrel recorder without clashing; this host's log is index.jsonl.
+Environment=ALIBI_CONTEXT_DIR=/opt/alibi/app/data/context
+ExecStart=/opt/alibi/venv/bin/python -m alibi_recorder context
+Restart=always
+RestartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/alibi/app/data
+
+[Install]
+WantedBy=multi-user.target
