@@ -29,9 +29,17 @@ learnt from AIS (`tools/stop_areas.py`), the nightly job and snapshot (`tools/ni
 Danish archive was extended from 2026-10-17 to 2026-10-28 and our recording up to the cut-off
 2026-10-28 was added to the profiles.
 
-## Data - never committed
+## Data
 
-`data/` is git-ignored in full:
+Committed after the hackathon (2026-11-01), as prior work:
+
+- `data/context/` - our hourly context recording (navigational warnings, winter navigation,
+  port visits, aids-to-navigation faults, restriction areas, fairways) from Fintraffic
+  Digitraffic open data, 2026-10-19 on. Live-only: the publishers keep no archive. Snapshot as
+  pulled to the PC; the recorder keeps running.
+- `data/derived/fleet_slowdown_candidates_*.csv` - the AIS-only fleet-slowdown lists.
+
+The rest of `data/` is git-ignored:
 
 - `data/ais/` - our recording of the Fintraffic Digitraffic marine AIS feed
   (digitraffic.fi; open data, license per digitraffic.fi terms - check and cite in the submission).

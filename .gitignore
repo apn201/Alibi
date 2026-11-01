@@ -1,5 +1,10 @@
-# All data: our recording, derived caches, third-party files (see PRIOR_WORK.md)
-data/
+# Data: our recording, derived caches, third-party files (see PRIOR_WORK.md). Committed exceptions:
+# the context recording (live-only, cannot be fetched again) and the fleet-slowdown candidate lists.
+data/*
+!data/context/
+!data/derived/
+data/derived/*
+!data/derived/fleet_slowdown_candidates_*.csv
 
 # Generated outputs (regenerate from sources)
 lab/*.ipynb
