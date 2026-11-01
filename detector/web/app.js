@@ -204,6 +204,8 @@ async function run(what) {
     r.cls = v.cls || (r.req.metadata && r.req.metadata.ship_type) || "";
     r.tier = v.profile_tier || (r.U == null && r.a ? "working" : "");
     r.work = r.tier === "working" || (r.a && r.U == null);
+    const idf = ((r.a && r.a.findings) || []).find(f => f.source_id === "identity"), idd = (idf && idf.details) || {};
+    r.eu = !!(idd.eu_designation && idd.eu_designation.listed); r.gur = !!(idd.gur_listing && idd.gur_listing.listed);
   });
   S.recordedSens = results[0] && results[0].configuration ? results[0].configuration.sensitivity : null;
   $("sens-rec").textContent = "· RECORDED " + (S.recordedSens == null ? "--" : (+S.recordedSens).toFixed(2));
@@ -315,7 +317,8 @@ function setStrip(o) {
 }
 function updateSub() {
   const scored = S.rows.filter(r => r.X != null).length, work = S.rows.filter(r => r.work).length;
-  const ships = new Set(S.rows.map(shipOf)).size;
+  const ships = new Set(S.rows.map(shipOf)).size, listed = new Set(S.rows.filter(r => r.eu || r.gur).map(shipOf)).size;
+  const lk = $("listed-only"); if (lk) lk.textContent = "LISTED" + (S.enabled.has("identity") ? " · " + listed : "");
   $("strip-sub").textContent = S.rows.length + " candidates on " + ships + " ships → " + topCount() + " ships in the top band" + (work ? " · " + work + " working, not scored" : "") + (scored < S.rows.length - work ? " · " + (S.rows.length - work - scored) + " not assessed" : "");
   $("sens-th").textContent = th().toFixed(2);
 }
@@ -323,7 +326,7 @@ function updateSub() {
 /* ---------- board ---------- */
 function sortedRows() {
   const k = S.sortKey, val = r => k === "unu" ? r.U : r.X;
-  return shipRows().sort((a, b) => {
+  return shipRows().filter(r => !S.listedOnly || r.events.some(e => e.eu || e.gur)).sort((a, b) => {
     if (k === "name") return a.name.localeCompare(b.name);
     const va = val(a), vb = val(b);
     if (va == null && vb == null) return a.name.localeCompare(b.name);
@@ -341,6 +344,7 @@ function renderBoard(animate) {
   const first = new Map();
   if (animate) S.rowEls.forEach((el, id) => { if (el.isConnected) first.set(id, el.getBoundingClientRect().top); });
   const t = th(), list = sortedRows();
+  if (!list.length) { boardMessage(!S.enabled.has("identity") ? "Identity lists are switched off. Switch IDENTITY on to see listed ships." : "No ship in this case is on the EU list or the GUR list."); return; }
   const frag = document.createDocumentFragment();
   const byX = S.sortKey === "unx";
   const nTop = list.filter(r => r.X != null && r.X >= t).length;
@@ -419,8 +423,11 @@ function fillRow(el, r, t, quiet) {
   const conf = r.a && r.a.confidence ? " · CONF " + String(r.a.confidence.level).toUpperCase() : "";
   const at = r.req.event && r.req.event.start_time ? fmtT(r.req.event.start_time, true) : "";
   const n = (r.events || []).length;
+  const ev = r.events || [r], eu = ev.some(e => e.eu), gur = ev.some(e => e.gur);
+  const listed = (eu ? '<span class="tag eu" title="On the EU list of designated vessels (Regulation 833/2014). Identity context, not part of the score.">EU</span> ' : "") +
+    (gur ? '<span class="tag gur" title="Listed by Ukrainian military intelligence (GUR), War &amp; Sanctions. Not a sanction; identity context, not part of the score.">GUR</span> ' : "");
   el.querySelector(".id").innerHTML = '<b title="' + esc(r.name) + (n > 1 ? " · " + n + " events, showing the " + (S.sortKey === "unu" ? "most unusual" : "least explained") : "") + '">' + esc(r.name) +
-    (at ? ' <small class="at">' + esc(at) + (n > 1 ? " · ×" + n : "") + "</small>" : "") + "</b><span>" + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
+    (at ? ' <small class="at">' + esc(at) + (n > 1 ? " · ×" + n : "") + "</small>" : "") + "</b><span>" + listed + (tierTxt ? '<span class="tag ' + esc(tier) + '">' + tierTxt + "</span> " : "") +
     esc(clsText(r.cls)) + conf + (r.err ? " · ERROR" : "") + "</span>";
   const lamps = (r.a && r.a.lamps) || {};
   el.querySelector(".fx").innerHTML = FX.map(f => {
@@ -429,7 +436,7 @@ function fillRow(el, r, t, quiet) {
     const word = !on ? "source off" : { explains: "explains", not_explained: "does not explain", unavailable: "no data", neutral: "neutral" }[st] || "not reported";
     return '<i class="' + c + '" title="' + FX_NAME[f] + ": " + word + '">' + f + "</i>";
   }).join("");
-  el.setAttribute("aria-label", r.name + ", " + (r.work ? "working vessel, not scored" : "unexplained " + pct(r.X) + ", unusual " + pct(r.U)) + (isTop ? ", in the top band" : ""));
+  el.setAttribute("aria-label", r.name + (eu ? ", on the EU list" : "") + (gur ? ", on the GUR list" : "") + ", " + (r.work ? "working vessel, not scored" : "unexplained " + pct(r.X) + ", unusual " + pct(r.U)) + (isTop ? ", in the top band" : ""));
 }
 function tweenNum(node, a, b) {
   const t0 = performance.now(), dur = 650;
@@ -725,6 +732,10 @@ function renderSourceKeys() {
 }
 
 function wireControls() {
+  $("listed-only").onclick = e => {
+    S.listedOnly = !S.listedOnly; e.currentTarget.setAttribute("aria-pressed", String(S.listedOnly));
+    renderBoard(false);
+  };
   document.querySelectorAll(".sortkeys .key").forEach(b => b.onclick = () => {
     S.sortKey = b.dataset.sort;
     document.querySelectorAll(".sortkeys .key").forEach(k => k.setAttribute("aria-pressed", String(k === b)));

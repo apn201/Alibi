@@ -103,6 +103,7 @@ button{font:inherit}
 .id b .at{font-family:var(--f-mono, inherit);font-weight:400;font-size:10px;letter-spacing:.04em;color:var(--dim);margin-left:4px}
 .id>span{font-size:11px;color:var(--dim);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .tag{font-size:9px;letter-spacing:.12em;padding:0 4px;border:1px solid currentColor;margin-right:2px;font-family:var(--f-data);font-weight:400}
+.tag.eu{color:var(--stamp);font-weight:600} .tag.gur{color:var(--amber)}
 .tag.own{color:var(--ok)} .tag.prototype{color:var(--steel-hi)} .tag.journey{color:var(--trace)} .tag.working{color:var(--dim)}
 canvas.tr{width:100%;height:46px;display:block}
 .fx{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
