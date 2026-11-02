@@ -8,20 +8,20 @@
    "start": "2026-10-05T18:00:00Z",
    "end": "2026-10-06T18:00:00Z",
    "third_party": false,
-   "candidates_total": 300,
-   "candidates_kept": 300,
+   "candidates_total": 344,
+   "candidates_kept": 344,
    "by_type": {
-    "slowdown": 254,
-    "grounding_pattern": 30,
-    "corridor_loiter": 16
+    "slowdown": 277,
+    "corridor_loiter": 36,
+    "grounding_pattern": 31
    },
    "by_min_tier": {
-    "2": 110,
-    "1": 98,
-    "0": 92
+    "2": 133,
+    "1": 113,
+    "0": 98
    },
    "file": "fi_fleet_2026_10_05.json",
-   "bytes": 13400380
+   "bytes": 15317341
   },
   {
    "case_id": "dk_oct2025",
@@ -31,7 +31,7 @@
    "start": "2025-10-03T07:00:00Z",
    "end": "2025-10-06T06:00:00Z",
    "third_party": false,
-   "candidates_total": 2463,
+   "candidates_total": 2637,
    "candidates_kept": 60,
    "by_type": {
     "slowdown": 60
@@ -40,7 +40,7 @@
     "0": 60
    },
    "file": "dk_oct2025.json",
-   "bytes": 2588081
+   "bytes": 2614300
   },
   {
    "case_id": "dk_jul2026",
@@ -50,7 +50,7 @@
    "start": "2026-07-02T14:00:00Z",
    "end": "2026-07-04T01:00:00Z",
    "third_party": false,
-   "candidates_total": 1186,
+   "candidates_total": 1278,
    "candidates_kept": 60,
    "by_type": {
     "slowdown": 60
@@ -59,7 +59,7 @@
     "0": 60
    },
    "file": "dk_jul2026.json",
-   "bytes": 2639328
+   "bytes": 2638703
   },
   {
    "case_id": "dk_feb2026",
@@ -69,7 +69,7 @@
    "start": "2026-02-01T17:00:00Z",
    "end": "2026-02-07T10:00:00Z",
    "third_party": false,
-   "candidates_total": 4705,
+   "candidates_total": 5094,
    "candidates_kept": 60,
    "by_type": {
     "slowdown": 60
@@ -78,7 +78,7 @@
     "0": 60
    },
    "file": "dk_feb2026.json",
-   "bytes": 2308197
+   "bytes": 2306957
   },
   {
    "case_id": "terry_2012",
@@ -107,19 +107,20 @@
    "start": "2026-10-25T00:00:00Z",
    "end": "2026-10-25T23:59:59Z",
    "third_party": false,
-   "candidates_total": 230,
+   "candidates_total": 262,
    "candidates_kept": 200,
    "by_type": {
-    "slowdown": 173,
-    "grounding_pattern": 27
+    "slowdown": 159,
+    "grounding_pattern": 27,
+    "corridor_loiter": 14
    },
    "by_min_tier": {
-    "1": 91,
-    "2": 55,
-    "0": 54
+    "2": 74,
+    "1": 71,
+    "0": 55
    },
    "file": "fi_replay_2026-10-25.json",
-   "bytes": 9059769
+   "bytes": 9062137
   },
   {
    "case_id": "fi_replay_2026-10-26",
@@ -129,20 +130,20 @@
    "start": "2026-10-26T00:00:00Z",
    "end": "2026-10-26T23:59:59Z",
    "third_party": false,
-   "candidates_total": 253,
+   "candidates_total": 280,
    "candidates_kept": 200,
    "by_type": {
-    "slowdown": 169,
+    "slowdown": 158,
     "grounding_pattern": 24,
-    "corridor_loiter": 7
+    "corridor_loiter": 18
    },
    "by_min_tier": {
-    "1": 97,
-    "0": 69,
-    "2": 34
+    "1": 71,
+    "0": 67,
+    "2": 62
    },
    "file": "fi_replay_2026-10-26.json",
-   "bytes": 8810445
+   "bytes": 8878612
   },
   {
    "case_id": "fi_replay_2026-10-27",
@@ -152,20 +153,20 @@
    "start": "2026-10-27T00:00:00Z",
    "end": "2026-10-27T23:59:59Z",
    "third_party": false,
-   "candidates_total": 281,
+   "candidates_total": 310,
    "candidates_kept": 200,
    "by_type": {
-    "slowdown": 171,
-    "grounding_pattern": 28,
-    "corridor_loiter": 1
+    "slowdown": 158,
+    "grounding_pattern": 29,
+    "corridor_loiter": 13
    },
    "by_min_tier": {
-    "1": 114,
-    "0": 61,
-    "2": 25
+    "2": 76,
+    "1": 68,
+    "0": 56
    },
    "file": "fi_replay_2026-10-27.json",
-   "bytes": 8879942
+   "bytes": 8929037
   },
   {
    "case_id": "fi_replay_2026-10-28",
@@ -175,19 +176,20 @@
    "start": "2026-10-28T00:00:00Z",
    "end": "2026-10-28T23:59:59Z",
    "third_party": false,
-   "candidates_total": 263,
+   "candidates_total": 295,
    "candidates_kept": 200,
    "by_type": {
-    "slowdown": 173,
-    "grounding_pattern": 27
+    "slowdown": 157,
+    "grounding_pattern": 29,
+    "corridor_loiter": 14
    },
    "by_min_tier": {
-    "1": 94,
-    "0": 59,
-    "2": 47
+    "2": 85,
+    "1": 61,
+    "0": 54
    },
    "file": "fi_replay_2026-10-28.json",
-   "bytes": 9030111
+   "bytes": 8919497
   }
  ]
 }
