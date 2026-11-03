@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["paho-mqtt==2.1.0"]
 
 [project.optional-dependencies]
-dev = ["pytest==8.4.2"]
+dev = ["pytest==9.0.3"]
 
 [project.scripts]
 alibi-recorder = "alibi_recorder.__main__:main"
